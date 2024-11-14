@@ -2,39 +2,47 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
+int hit_borders(int xCoord, int yCoord, int direction_x, int direction_y) {
+    if ((xCoord + direction_x) >= COLS || (xCoord + direction_x) <= 0) return 0;
+    if ((yCoord + direction_y) >= LINES || (yCoord + direction_y) <= -1) return 0;
+    return 1;
+}
+
 int main(void)
 {
     initscr();
+    noecho();
+    curs_set(0);
 
     char c;
-    int x = (LINES-1)/2;
-    int y = (COLS-1)/2;
-    int direction_x = 0;
+    int yCoord = (LINES-1)/2;
+    int xCoord = (COLS-1)/2;
     int direction_y = 0;
+    int direction_x = 0;
 
     do {
         clear();
         if (c == 'w') {
-            direction_x = -1;
-            direction_y = 0;
+            direction_y = -1;
+            direction_x = 0;
         }
         if (c == 'a') {
-            direction_x = 0;
-            direction_y = -1;
+            direction_y = 0;
+            direction_x = -1;
         }
         if (c == 's') {
-            direction_x = 1;
-            direction_y = 0;
+            direction_y = 1;
+            direction_x = 0;
         }
         if (c == 'd') {
-            direction_x = 0;
-            direction_y = 1;
+            direction_y = 0;
+            direction_x = 1;
         }
-        if ( (x+direction_x) <= COLS || (y+direction_y) >= LINES || (x+direction_x) == 0 || (y+direction_y) == 0) {
-            x += direction_x;
-            y += direction_y;
+        if (hit_borders(xCoord, yCoord, direction_x, direction_y) == 1) {
+            yCoord += direction_y;
+            xCoord += direction_x;
         }
-        mvaddch(x, y, '*');
+        mvaddch(yCoord, xCoord, '*');
         refresh();
         c=getch();
     } while (c == 'w' || c == 'a' || c == 's' || c == 'd');
