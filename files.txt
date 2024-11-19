@@ -1,1 +1,1 @@
-main src/main.c src/display.c src/input_processing.c include/display.h include/input_processing.h ncurses SDL2
+main src/main.c src/display.c src/input_processing.c src/gui.c include/display.h include/input_processing.h include/gui.h ncurses SDL2
