@@ -6,32 +6,31 @@
 
 void process_input(void *data, int *err)
 {
-    input         *player = (input *)data;
-    const uint32_t UP     = 11;
-    const uint32_t DOWN   = 12;
-    const uint32_t LEFT   = 13;
-    const uint32_t RIGHT  = 14;
+    player        *p     = (player *)data;
+    const uint32_t UP    = 11;
+    const uint32_t DOWN  = 12;
+    const uint32_t LEFT  = 13;
+    const uint32_t RIGHT = 14;
 
-    printf("3");
-    if(player->direction == UP)
+    if(p->direction == UP)
     {
-        player->x += 0;
-        player->y += -1;
+        p->x += 0;
+        p->y += -1;
     }
-    else if(player->direction == DOWN)
+    else if(p->direction == DOWN)
     {
-        player->x += 0;
-        player->y += 1;
+        p->x += 0;
+        p->y += 1;
     }
-    else if(player->direction == LEFT)
+    else if(p->direction == LEFT)
     {
-        player->x += -1;
-        player->y += 0;
+        p->x += -1;
+        p->y += 0;
     }
-    else if(player->direction == RIGHT)
+    else if(p->direction == RIGHT)
     {
-        player->x += 1;
-        player->y += 0;
+        p->x += 1;
+        p->y += 0;
     }
     else
     {
@@ -42,8 +41,8 @@ void process_input(void *data, int *err)
 void gather_input(void *data, int *err)
 {
     SDL_Event           event;
-    input              *button_input = (input *)data;
-    SDL_GameController *controller   = NULL;
+    player             *p          = (player *)data;
+    SDL_GameController *controller = NULL;
 
     if(SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
     {
@@ -51,7 +50,6 @@ void gather_input(void *data, int *err)
         *err = errno;
         return;
     }
-    printf("2");
     if(SDL_NumJoysticks() > 0)
     {
         controller = SDL_GameControllerOpen(0);
@@ -74,35 +72,28 @@ void gather_input(void *data, int *err)
     {
         while(SDL_PollEvent(&event))
         {
-            printf("in here");
             if(event.type == SDL_QUIT)
             {
-                printf("quit");
                 SDL_GameControllerClose(controller);
                 SDL_Quit();
                 return;
             }
             if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
             {
-                printf("Button event: button %d%s\n", event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
+                // printf("Button event: button %d%s\n", event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
                 // TODO: process input... event.cbutton.button
                 //  up:11
                 //  down:12
                 //  left:13
                 //  right:14
-                button_input->direction = event.cbutton.button;
-                process_input(button_input, err);
-                if(err != 0)
+                p->direction = event.cbutton.button;
+                process_input(p, err);
+                if(*err != 0)
                 {
                     perror("Error processing the button input.");
                 }
                 goto done;
             }
-            // Not using joystick
-            // if(event.type == SDL_CONTROLLERAXISMOTION)
-            // {
-            //     printf("Axis event: axis %dposition %d\n", event.caxis.axis, event.caxis.value);
-            // }
         }
     }
 done:

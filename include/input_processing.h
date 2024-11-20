@@ -10,7 +10,7 @@ typedef struct
     int      x;
     int      y;
     uint32_t direction;
-} input;
+} player;
 
 void process_input(void *data, int *err);
 
