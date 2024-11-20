@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-void process_input(void *data, int *err)
+void process_input(const int *total_cols, const int *total_lines, void *data, int *err)
 {
     player        *p           = (player *)data;
     const uint32_t UP          = 11;
@@ -38,11 +38,14 @@ void process_input(void *data, int *err)
     {
         *err = -1;
     }
-    p->x += direction_x;
-    p->y += direction_y;
+    if(hit_borders(total_cols, total_lines, p, direction_x, direction_y))
+    {
+        p->x += direction_x;
+        p->y += direction_y;
+    }
 }
 
-void get_input(void *data, int *err)
+void get_input(const int *total_cols, const int *total_lines, void *data, int *err)
 {
     SDL_Event           event;
     player             *p          = (player *)data;
@@ -91,7 +94,7 @@ void get_input(void *data, int *err)
                 //  left:13
                 //  right:14
                 p->direction = event.cbutton.button;
-                process_input(p, err);
+                process_input(total_cols, total_lines, p, err);
                 if(*err != 0)
                 {
                     perror("Error processing the button input.");
@@ -105,13 +108,14 @@ done:
     SDL_Quit();
 }
 
-int hit_borders(int total_cols, int total_lines, int xCoord, int yCoord, int direction_x, int direction_y)
+int hit_borders(const int *total_cols, const int *total_lines, void *data, int direction_x, int direction_y)
 {
-    if((xCoord + direction_x) >= total_cols || (xCoord + direction_x) <= 0)
+    const player *p = (player *)data;
+    if((p->x + direction_x) >= *total_cols || (p->x + direction_x) <= 0)
     {
         return 0;
     }
-    if((yCoord + direction_y) >= total_lines || (yCoord + direction_y) <= -1)
+    if((p->y + direction_y) >= *total_lines || (p->y + direction_y) <= -1)
     {
         return 0;
     }

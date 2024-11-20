@@ -3,16 +3,6 @@
 #include <ncurses.h>
 #include <signal.h>
 
-// Here I ignored the warning for terminate because I wanted
-//  terminate to act as a global flag for handling SIGINT.
-//  I couldn't think of an alternative to not using a
-//  non-constant global flag that also avoids compiler
-//  warnings.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-static int terminate = 0;
-
-void handle_signal(int signal);
-
 void handle_signal(int signal)
 {
     if(signal == SIGINT)
@@ -44,7 +34,7 @@ void gui(int *err)
         clear();
         // TODO: invoke functions that retrieves processed input for movement
         // if(hit_borders(COLS, LINES, p.x, p.y))
-        get_input(&p, err);
+        get_input(&COLS, &LINES, &p, err);
         mvaddch(p.y, p.x, '*');
         refresh();
         // c = (char)getch();

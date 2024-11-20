@@ -12,10 +12,10 @@ typedef struct
     uint32_t direction;
 } player;
 
-void process_input(void *data, int *err);
+void process_input(const int *total_cols, const int *total_lines, void *data, int *err);
 
-void get_input(void *data, int *err);
+void get_input(const int *total_cols, const int *total_lines, void *data, int *err);
 
-int hit_borders(int total_cols, int total_lines, int xCoord, int yCoord, int direction_x, int direction_y);
+int hit_borders(const int *total_cols, const int *total_lines, void *data, int direction_x, int direction_y);
 
 #endif    // GAME_INPUT_PROCESSING_H
