@@ -60,6 +60,7 @@ void gather_input(int *err)
     {
         while(SDL_PollEvent(&event))
         {
+            printf("in here.");
             if(event.type == SDL_QUIT)
             {
                 SDL_GameControllerClose(controller);
@@ -69,11 +70,17 @@ void gather_input(int *err)
             if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
             {
                 printf("Button event: button %d%s\n", event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
+                // TODO: process input... event.cbutton.button
+                //  up:11
+                //  down:12
+                //  left:13
+                //  right:14
             }
-            if(event.type == SDL_CONTROLLERAXISMOTION)
-            {
-                printf("Axis event: axis %dposition %d\n", event.caxis.axis, event.caxis.value);
-            }
+            // Not using joystick
+            // if(event.type == SDL_CONTROLLERAXISMOTION)
+            // {
+            //     printf("Axis event: axis %dposition %d\n", event.caxis.axis, event.caxis.value);
+            // }
         }
     }
     SDL_GameControllerClose(controller);
