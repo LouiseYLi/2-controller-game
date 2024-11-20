@@ -76,7 +76,7 @@ void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, c
     }
 }
 
-int set_socket_flags(int server_fd, int *err)
+void set_socket_flags(int server_fd, int *err)
 {
     int flags;
     // Returns flags of socket
@@ -85,29 +85,36 @@ int set_socket_flags(int server_fd, int *err)
     if(flags == -1)
     {
         close(server_fd);
-        server_fd = -1;
-        *err      = errno;
-        goto done;
+        *err = errno;
+        return;
     }
 
     // Sets non-blocking flag to socket
     if(fcntl(server_fd, F_SETFL, flags | O_NONBLOCK))
     {
         close(server_fd);
-        server_fd = -1;
-        *err      = errno;
-        goto done;
+        *err = errno;
+        return;
     }
-done:
-    return server_fd;
 }
 
-int open_network_socket(const char *address, in_port_t port, int backlog, int *err)
+void bind_network_socket(int server_fd, const void *addr, socklen_t addr_len, int *err)
+{
+    int result = bind(server_fd, (const struct sockaddr *)addr, addr_len);
+
+    if(result == -1)
+    {
+        close(server_fd);
+        *err = errno;
+        return;
+    }
+}
+
+int open_network_socket(const char *address, in_port_t port, int *err)
 {
     struct sockaddr_storage addr;
     socklen_t               addr_len;
     int                     server_fd;
-    int                     result;
 
     // I dereferenced addr to get the address of it
     setup_network_address(&addr, &addr_len, address, port, err);
@@ -126,23 +133,19 @@ int open_network_socket(const char *address, in_port_t port, int backlog, int *e
         goto done;
     }
 
-    server_fd = set_socket_flags(server_fd, err);
+    set_socket_flags(server_fd, err);
     if(*err != 0)
     {
+        server_fd = -1;
         goto done;
     }
 
-    result = bind(server_fd, (const struct sockaddr *)&addr, addr_len);
-
-    if(result == -1)
+    bind_network_socket(server_fd, &addr, addr_len, err);
+    if(*err != 0)
     {
-        close(server_fd);
         server_fd = -1;
-        *err      = errno;
         goto done;
     }
 done:
     return server_fd;
 }
-
-// int bind_network_socket(...)
