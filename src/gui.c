@@ -28,16 +28,19 @@ void gui(int *err)
     p.y = (LINES - 1) / 2;
     p.x = (COLS - 1) / 2;
     mvaddch(p.y, p.x, '*');
+    // TODO: add "other" peer player dot
     refresh();
     do
     {
         clear();
-        // TODO: invoke functions that retrieves processed input for movement
-        // if(hit_borders(COLS, LINES, p.x, p.y))
         get_input(&COLS, &LINES, &p, err);
+        // TODO: serialize player struct
+        // TODO: write serialized data to socket, asynchronous, must SYNC
+
+        // TODO: retrieve and deserialize any data from socket
+        // TODO: update gui on this side
         mvaddch(p.y, p.x, '*');
         refresh();
-        // c = (char)getch();
     } while(terminate == 0);
 
     endwin();

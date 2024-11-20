@@ -7,6 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// TODO: implement socket operations
+// TODO: implement "other" peer
+// TODO: Implement sockets for peer
+
 int main(void)
 {
     int err = 0;

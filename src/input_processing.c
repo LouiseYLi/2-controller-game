@@ -88,13 +88,14 @@ void get_input(const int *total_cols, const int *total_lines, void *data, int *e
             if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
             {
                 // printf("Button event: button %d%s\n", event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
-                // TODO: process input... event.cbutton.button
                 //  up:11
                 //  down:12
                 //  left:13
                 //  right:14
                 p->direction = event.cbutton.button;
                 process_input(total_cols, total_lines, p, err);
+                // TODO: serialize player struct
+                // TODO: write serialized data to socket
                 if(*err != 0)
                 {
                     perror("Error processing the button input.");
