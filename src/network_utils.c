@@ -5,6 +5,7 @@
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
 
+
 in_port_t convert_port(const char *str, int *err)
 {
     in_port_t port;
@@ -43,8 +44,39 @@ done:
     return port;
 }
 
+void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
+{
+    in_port_t net_port;
+
+    *addr_len = 0;
+    net_port  = htons(port);
+    memset(addr, 0, sizeof(*addr));
+
+    if(inet_pton(AF_INET, address, &(((struct sockaddr_in *)addr)->sin_addr)) == 1)
+    {
+        struct sockaddr_in *ipv4_addr;
+
+        ipv4_addr           = (struct sockaddr_in *)addr;
+        addr->ss_family     = AF_INET;
+        ipv4_addr->sin_port = net_port;
+        *addr_len           = sizeof(struct sockaddr_in);
+    }
+    else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
+    {
+        struct sockaddr_in6 *ipv6_addr;
+
+        ipv6_addr            = (struct sockaddr_in6 *)addr;
+        addr->ss_family      = AF_INET6;
+        ipv6_addr->sin6_port = net_port;
+        *addr_len            = sizeof(struct sockaddr_in6);
+    }
+    else
+    {
+        fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
+        *err = errno;
+    }
+}
+
 // int open_network_socket_client(const char *address, in_port_t port, int *err)
 
-// int open_network_socket_server(const char *address, in_port_t port, int backlog, int *err);
-
-// int accept_connection(int server_fd, int *err);
+// int bind_network_socket(...)
