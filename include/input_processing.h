@@ -14,7 +14,7 @@ typedef struct
 
 void process_input(void *data, int *err);
 
-void gather_input(void *data, int *err);
+void get_input(void *data, int *err);
 
 int hit_borders(int total_cols, int total_lines, int xCoord, int yCoord, int direction_x, int direction_y);
 

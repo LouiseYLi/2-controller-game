@@ -6,39 +6,43 @@
 
 void process_input(void *data, int *err)
 {
-    player        *p     = (player *)data;
-    const uint32_t UP    = 11;
-    const uint32_t DOWN  = 12;
-    const uint32_t LEFT  = 13;
-    const uint32_t RIGHT = 14;
+    player        *p           = (player *)data;
+    const uint32_t UP          = 11;
+    const uint32_t DOWN        = 12;
+    const uint32_t LEFT        = 13;
+    const uint32_t RIGHT       = 14;
+    int            direction_x = 0;
+    int            direction_y = 0;
 
     if(p->direction == UP)
     {
-        p->x += 0;
-        p->y += -1;
+        direction_x = 0;
+        direction_y = -1;
     }
     else if(p->direction == DOWN)
     {
-        p->x += 0;
-        p->y += 1;
+        direction_x = 0;
+        direction_y = 1;
     }
     else if(p->direction == LEFT)
     {
-        p->x += -1;
-        p->y += 0;
+        direction_x = -1;
+        direction_y = 0;
     }
     else if(p->direction == RIGHT)
     {
-        p->x += 1;
-        p->y += 0;
+        direction_x = 1;
+        direction_y = 0;
     }
     else
     {
         *err = -1;
     }
+    p->x += direction_x;
+    p->y += direction_y;
 }
 
-void gather_input(void *data, int *err)
+void get_input(void *data, int *err)
 {
     SDL_Event           event;
     player             *p          = (player *)data;
