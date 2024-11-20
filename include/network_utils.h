@@ -23,7 +23,7 @@ void set_socket_flags(int socket_fd, int *err);
 
 void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, int *err);
 
-int open_network_socket(const char *address, in_port_t port, int *err);
+int setup_network_socket(const char *address, in_port_t port, int *err);
 
 void close_socket(int socket_fd);
 

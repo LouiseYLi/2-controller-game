@@ -33,12 +33,17 @@ void gui(int *err)
     do
     {
         clear();
-        get_input(&COLS, &LINES, &p, err);
+        get_input(&p, err);
         // TODO: serialize player struct
         // TODO: write serialized data to socket, asynchronous, must SYNC
 
         // TODO: retrieve and deserialize any data from socket
         // TODO: update gui on this side
+        process_input(&COLS, &LINES, &p, err);
+        if(*err != 0)
+        {
+            perror("Error processing the button input.");
+        }
         mvaddch(p.y, p.x, '*');
         refresh();
     } while(terminate == 0);

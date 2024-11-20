@@ -110,7 +110,7 @@ void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, in
     }
 }
 
-int open_network_socket(const char *address, in_port_t port, int *err)
+int setup_network_socket(const char *address, in_port_t port, int *err)
 {
     struct sockaddr_storage addr;
     socklen_t               addr_len;
