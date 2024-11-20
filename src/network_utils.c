@@ -76,35 +76,35 @@ void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, c
     }
 }
 
-void set_socket_flags(int server_fd, int *err)
+void set_socket_flags(int socket_fd, int *err)
 {
     int flags;
     // Returns flags of socket
-    flags = fcntl(server_fd, F_GETFL, 0);
+    flags = fcntl(socket_fd, F_GETFL, 0);
 
     if(flags == -1)
     {
-        close(server_fd);
+        close(socket_fd);
         *err = errno;
         return;
     }
 
     // Sets non-blocking flag to socket
-    if(fcntl(server_fd, F_SETFL, flags | O_NONBLOCK))
+    if(fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK))
     {
-        close(server_fd);
+        close(socket_fd);
         *err = errno;
         return;
     }
 }
 
-void bind_network_socket(int server_fd, const void *addr, socklen_t addr_len, int *err)
+void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, int *err)
 {
-    int result = bind(server_fd, (const struct sockaddr *)addr, addr_len);
+    int result = bind(socket_fd, (const struct sockaddr *)addr, addr_len);
 
     if(result == -1)
     {
-        close(server_fd);
+        close(socket_fd);
         *err = errno;
         return;
     }
@@ -114,38 +114,47 @@ int open_network_socket(const char *address, in_port_t port, int *err)
 {
     struct sockaddr_storage addr;
     socklen_t               addr_len;
-    int                     server_fd;
+    int                     socket_fd;
 
     // I dereferenced addr to get the address of it
     setup_network_address(&addr, &addr_len, address, port, err);
 
     if(*err != 0)
     {
-        server_fd = -1;
+        socket_fd = -1;
         goto done;
     }
     // ERROR HERE
-    server_fd = socket(addr.ss_family, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
+    socket_fd = socket(addr.ss_family, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
 
-    if(server_fd == -1)
+    if(socket_fd == -1)
     {
         *err = errno;
         goto done;
     }
 
-    set_socket_flags(server_fd, err);
+    set_socket_flags(socket_fd, err);
     if(*err != 0)
     {
-        server_fd = -1;
+        socket_fd = -1;
         goto done;
     }
 
-    bind_network_socket(server_fd, &addr, addr_len, err);
+    bind_network_socket(socket_fd, &addr, addr_len, err);
     if(*err != 0)
     {
-        server_fd = -1;
+        socket_fd = -1;
         goto done;
     }
 done:
-    return server_fd;
+    return socket_fd;
+}
+
+void close_socket(int socket_fd)
+{
+    if(close(socket_fd) == -1)
+    {
+        perror("Error closing socket");
+        exit(EXIT_FAILURE);
+    }
 }
