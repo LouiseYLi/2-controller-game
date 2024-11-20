@@ -19,8 +19,10 @@ in_port_t convert_port(const char *str, int *err);
 
 void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err);
 
-// int open_network_socket(const char *address, in_port_t port, int *err);
+int set_socket_flags(int server_fd, int *err);
 
-// int bind_network_socket(...)
+int open_network_socket(const char *address, in_port_t port, int backlog, int *err);
+
+int bind_network_socket()
 
 #endif    // GAME_NETWORK_UTILS_H

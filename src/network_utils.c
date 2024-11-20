@@ -5,7 +5,6 @@
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
 
-
 in_port_t convert_port(const char *str, int *err)
 {
     in_port_t port;
@@ -77,6 +76,73 @@ void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, c
     }
 }
 
-// int open_network_socket_client(const char *address, in_port_t port, int *err)
+int set_socket_flags(int server_fd, int *err)
+{
+    int flags;
+    // Returns flags of socket
+    flags = fcntl(server_fd, F_GETFL, 0);
+
+    if(flags == -1)
+    {
+        close(server_fd);
+        server_fd = -1;
+        *err      = errno;
+        goto done;
+    }
+
+    // Sets non-blocking flag to socket
+    if(fcntl(server_fd, F_SETFL, flags | O_NONBLOCK))
+    {
+        close(server_fd);
+        server_fd = -1;
+        *err      = errno;
+        goto done;
+    }
+done:
+    return server_fd;
+}
+
+int open_network_socket(const char *address, in_port_t port, int backlog, int *err)
+{
+    struct sockaddr_storage addr;
+    socklen_t               addr_len;
+    int                     server_fd;
+    int                     result;
+
+    // I dereferenced addr to get the address of it
+    setup_network_address(&addr, &addr_len, address, port, err);
+
+    if(*err != 0)
+    {
+        server_fd = -1;
+        goto done;
+    }
+    // ERROR HERE
+    server_fd = socket(addr.ss_family, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
+
+    if(server_fd == -1)
+    {
+        *err = errno;
+        goto done;
+    }
+
+    server_fd = set_socket_flags(server_fd, err);
+    if(*err != 0)
+    {
+        goto done;
+    }
+
+    result = bind(server_fd, (const struct sockaddr *)&addr, addr_len);
+
+    if(result == -1)
+    {
+        close(server_fd);
+        server_fd = -1;
+        *err      = errno;
+        goto done;
+    }
+done:
+    return server_fd;
+}
 
 // int bind_network_socket(...)
