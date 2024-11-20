@@ -1,54 +1,52 @@
 #include "../include/gui.h"
 #include "../include/input_processing.h"
 #include <ncurses.h>
+#include <signal.h>
 
-void gui(void)
+// Here I ignored the warning for terminate because I wanted
+//  terminate to act as a global flag for handling SIGINT.
+//  I couldn't think of an alternative to not using a
+//  non-constant global flag that also avoids compiler
+//  warnings.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+static int terminate = 0;
+
+void handle_signal(int signal);
+
+void handle_signal(int signal)
 {
-    char c = ' ';
-    int  yCoord;
-    int  xCoord;
-    int  direction_y = 0;
-    int  direction_x = 0;
+    if(signal == SIGINT)
+    {
+        terminate = 1;
+    }
+}
+
+void gui(int *err)
+{
+    player p = {0, 0, 0};
 
     initscr();
     noecho();
     curs_set(0);
 
-    yCoord = (LINES - 1) / 2;
-    xCoord = (COLS - 1) / 2;
+    if(signal(SIGINT, handle_signal) == SIG_ERR)
+    {
+        perror("Error setting up signal handler");
+        return;
+    }
+
+    p.y = (LINES - 1) / 2;
+    p.x = (COLS - 1) / 2;
 
     do
     {
         clear();
-        if(c == 'w')
-        {
-            direction_y = -1;
-            direction_x = 0;
-        }
-        if(c == 'a')
-        {
-            direction_y = 0;
-            direction_x = -1;
-        }
-        if(c == 's')
-        {
-            direction_y = 1;
-            direction_x = 0;
-        }
-        if(c == 'd')
-        {
-            direction_y = 0;
-            direction_x = 1;
-        }
-        if(hit_borders(COLS, LINES, xCoord, yCoord, direction_x, direction_y) == 1)
-        {
-            yCoord += direction_y;
-            xCoord += direction_x;
-        }
-        mvaddch(yCoord, xCoord, '*');
+        // TODO: invoke functions that retrieves processed input for movement
+        gather_input(&p, err);
+        mvaddch(p.y, p.x, '*');
         refresh();
-        c = (char)getch();
-    } while(c == 'w' || c == 'a' || c == 's' || c == 'd');
+        // c = (char)getch();
+    } while(terminate == 0);
 
     endwin();
 }
