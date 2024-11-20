@@ -37,12 +37,14 @@ void gui(int *err)
 
     p.y = (LINES - 1) / 2;
     p.x = (COLS - 1) / 2;
-
+    mvaddch(p.y, p.x, '*');
+    refresh();
     do
     {
         clear();
         // TODO: invoke functions that retrieves processed input for movement
-        gather_input(&p, err);
+        // if(hit_borders(COLS, LINES, p.x, p.y))
+        get_input(&p, err);
         mvaddch(p.y, p.x, '*');
         refresh();
         // c = (char)getch();
