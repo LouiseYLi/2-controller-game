@@ -52,6 +52,10 @@ int main(int argc, char *argv[])
     data.ip          = NULL;
     data.port        = convert_port(PORT, &err);
     data.socket_fd   = 0;
+    
+    if (*err != 0) {
+        goto done;
+    }
 
     if(parse_arguments(argc, argv, &data) == -1)
     {

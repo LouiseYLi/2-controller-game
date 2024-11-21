@@ -19,6 +19,7 @@ in_port_t convert_port(const char *str, int *err)
     // Check if no digits were found
     if(endptr == str)
     {
+        perror("Error no digits found for port.");
         *err = ERR_NO_DIGITS;
         goto done;
     }
@@ -26,6 +27,7 @@ in_port_t convert_port(const char *str, int *err)
     // Check for out-of-range errors
     if(val < 0 || val > UINT16_MAX)
     {
+        perror("Error port out of range.");
         *err = ERR_OUT_OF_RANGE;
         goto done;
     }
@@ -33,6 +35,7 @@ in_port_t convert_port(const char *str, int *err)
     // Check for trailing invalid characters
     if(*endptr != '\0')
     {
+        perror("Error invalid characters for port.");
         *err = ERR_INVALID_CHARS;
         goto done;
     }
