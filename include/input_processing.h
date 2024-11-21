@@ -8,16 +8,18 @@
 
 typedef struct
 {
-    int32_t  x;
-    int32_t  y;
+    uint32_t x;
+    uint32_t y;
     uint16_t direction;
 } player;
 
-void serialize_coordinate(int32_t coordinate, uint8_t buffer[], int *index);
+// uint8_t []new_serialize_buffer(void *data);
 
-void serialize_direction(uint16_t direction, uint8_t buffer[], int *index);
+void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index);
 
-void serialize_player(struct player *player, uint8_t buffer[]);
+void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int *index);
+
+void serialize_player(const player *p, uint8_t buffer[]);
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err);
 

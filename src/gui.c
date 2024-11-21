@@ -28,9 +28,9 @@ void gui(/*TODO: add this back void *data,*/ int *err)
         return;
     }
 
-    p.y = (LINES - 1) / 2;
-    p.x = (COLS - 1) / 2;
-    mvaddch(p.y, p.x, '*');
+    p.y = (uint32_t)(LINES - 1) / 2;
+    p.x = (uint32_t)(COLS - 1) / 2;
+    mvaddch((int)p.y, (int)p.x, '*');
     // TODO: add "other" peer player dot
     refresh();
     do
@@ -48,7 +48,7 @@ void gui(/*TODO: add this back void *data,*/ int *err)
         {
             perror("Error processing the button input.");
         }
-        mvaddch(p.y, p.x, '*');
+        mvaddch((int)p.y, (int)p.x, '*');
         refresh();
     } while(terminate == 0);
 

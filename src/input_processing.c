@@ -4,25 +4,28 @@
 #include <errno.h>
 #include <stdio.h>
 
-void serialize_coordinate(int32_t coordinate, uint8_t buffer[], int *index) {
+void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index)
+{
     coordinate = htonl(coordinate);
     // TODO: realloc size of buffer if not enough space
     //      i think it should be fine as is though
-    memcpy(&buffer[*index], coordinate, sizeof(coordinate));
+    memcpy(&buffer[*index], &coordinate, sizeof(coordinate));
     *index += sizeof(coordinate);
 }
 
-void serialize_direction(uint16_t direction, uint8_t buffer[], int *index) {
+void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int *index)
+{
     direction = htons(direction);
-    memcpy(&buffer[*index], direction, sizeof(direction));
-    *index += sizeof(coordinate);
+    memcpy(&buffer[*index], &direction, sizeof(direction));
+    *index += sizeof(direction);
 }
 
-void serialize_player(struct player *player, uint8_t buffer[]) {
-    int index = 0;
-    serialize_unsigned_int(player->x, buffer, &index);
-    serialize_unsigned_int(player->y, buffer, &index);
-    serialize_direction(player->direction, buffer, &index);
+void serialize_player(const player *p, uint8_t buffer[])
+{
+    long unsigned int index = 0;
+    serialize_coordinate(p->x, buffer, &index);
+    serialize_coordinate(p->y, buffer, &index);
+    serialize_direction(p->direction, buffer, &index);
 }
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err)
@@ -61,8 +64,11 @@ void process_input(const int *total_cols, const int *total_lines, void *data, in
     }
     if(!hit_borders(total_cols, total_lines, p, direction_x, direction_y))
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
         p->x += direction_x;
         p->y += direction_y;
+#pragma GCC diagnostic pop
     }
 }
 
@@ -124,11 +130,13 @@ done:
 int hit_borders(const int *total_cols, const int *total_lines, void *data, int direction_x, int direction_y)
 {
     const player *p = (player *)data;
-    if((p->x + direction_x) >= *total_cols || (p->x + direction_x) <= 0)
+    int           x = (int)p->x;
+    int           y = (int)p->y;
+    if((x + direction_x) >= *total_cols || (x + direction_x) <= 0)
     {
         return 1;
     }
-    if((p->y + direction_y) >= *total_lines || (p->y + direction_y) <= -1)
+    if((y + direction_y) >= *total_lines || (y + direction_y) <= -1)
     {
         return 1;
     }
