@@ -46,13 +46,13 @@ int main(int argc, char *argv[])
 {
     struct network_socket data;
     // Temp default values for window and players
-    const int             height = 20;
-    const int             width  = 20;
-    window                w      = {height, width};
-    player                p      = {0, temp_coord, temp_coord, 0};
-    player                p2     = {0, temp_coord2, temp_coord2, 0};
-    int                   err    = 0;
-    int                   retval = 0;
+    const int height = 20;
+    const int width  = 30;
+    window    w      = {height, width};
+    player    p      = {0, temp_coord, temp_coord, 0};
+    player    p2     = {0, temp_coord2, temp_coord2, 0};
+    int       err    = 0;
+    int       retval = 0;
 
     const char *PORT = "9999";
     data.src_ip      = NULL;

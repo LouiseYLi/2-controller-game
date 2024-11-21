@@ -1,8 +1,21 @@
 #ifndef GAME_GUI_H
 #define GAME_GUI_H
 
-#include "input_processing.h"
 #include <stdint.h>
+
+typedef struct
+{
+    int width;
+    int height;
+} window;
+
+typedef struct
+{
+    uint32_t id;
+    uint32_t x;
+    uint32_t y;
+    uint16_t direction;
+} player;
 
 // Here I ignored the warning for terminate because I wanted
 //  terminate to act as a global flag for handling SIGINT.
@@ -14,12 +27,6 @@
 // // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 // static int terminate = 0;
 // #pragma GCC diagnostic pop
-
-typedef struct
-{
-    int width;
-    int height;
-} window;
 
 void handle_signal(int signal);
 

@@ -1,5 +1,6 @@
 #include "../include/input_processing.h"
 #include "../include/gui.h"
+#include "../include/network_utils.h"
 #include <SDL2/SDL.h>
 #include <errno.h>
 #include <stdio.h>
@@ -35,9 +36,47 @@ void serialize_player(const player *p, uint8_t buffer[])
     serialize_uint32_t(p->y, buffer, &index);
 }
 
-void process_input(const int *total_cols, const int *total_lines, void *data, int *err)
+void process_keyboard_input(const window *w, player *p, int *err)
 {
-    player        *p           = (player *)data;
+    int direction_x = 0;
+    int direction_y = 0;
+
+    if(p->direction == 'w')
+    {
+        direction_x = -1;
+        direction_y = 0;
+    }
+    if(p->direction == 'a')
+    {
+        direction_x = 0;
+        direction_y = -1;
+    }
+    if(p->direction == 's')
+    {
+        direction_x = 1;
+        direction_y = 0;
+    }
+    if(p->direction == 'd')
+    {
+        direction_x = 0;
+        direction_y = 1;
+    }
+    else
+    {
+        *err = -1;
+    }
+    if(!hit_borders(w, p, direction_x, direction_y))
+    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+        p->x += direction_x;
+        p->y += direction_y;
+#pragma GCC diagnostic pop
+    }
+}
+
+void process_controller_input(const window *w, player *p, int *err)
+{
     const uint32_t UP          = 11;
     const uint32_t DOWN        = 12;
     const uint32_t LEFT        = 13;
@@ -69,7 +108,7 @@ void process_input(const int *total_cols, const int *total_lines, void *data, in
     {
         *err = -1;
     }
-    if(!hit_borders(total_cols, total_lines, p, direction_x, direction_y))
+    if(!hit_borders(w, p, direction_x, direction_y))
     {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -134,16 +173,16 @@ done:
     SDL_Quit();
 }
 
-int hit_borders(const int *total_cols, const int *total_lines, void *data, int direction_x, int direction_y)
+int hit_borders(const window *w, void *data, int direction_x, int direction_y)
 {
     const player *p = (player *)data;
     int           x = (int)p->x;
     int           y = (int)p->y;
-    if((x + direction_x) >= *total_cols || (x + direction_x) <= 0)
+    if((x + direction_x) >= w->height || (x + direction_x) <= 0)
     {
         return 1;
     }
-    if((y + direction_y) >= *total_lines || (y + direction_y) <= -1)
+    if((y + direction_y) >= w->width || (y + direction_y) <= -1)
     {
         return 1;
     }
