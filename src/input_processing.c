@@ -4,6 +4,16 @@
 #include <errno.h>
 #include <stdio.h>
 
+void new_player_buffer(uint8_t **buffer, int *err)
+{
+    *buffer = (uint8_t *)malloc(2 * sizeof(uint32_t) + sizeof(uint16_t));
+    if(*buffer == NULL)
+    {
+        perror("Error allocating memory to player buffer.");
+        *err = errno;
+    }
+}
+
 void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index)
 {
     coordinate = htonl(coordinate);

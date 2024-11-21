@@ -13,7 +13,7 @@ typedef struct
     uint16_t direction;
 } player;
 
-// uint8_t []new_serialize_buffer(void *data);
+void new_player_buffer(uint8_t **buffer, int *err);
 
 void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index);
 
