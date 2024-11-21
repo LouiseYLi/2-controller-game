@@ -13,9 +13,9 @@ typedef struct
     uint16_t direction;
 } player;
 
-void serialize_coordinate(int32_t coordinate, uint8_t buffer[]);
+void serialize_coordinate(int32_t coordinate, uint8_t buffer[], int *index);
 
-void serialize_direction(uint16_t direction, uint8_t buffer[]);
+void serialize_direction(uint16_t direction, uint8_t buffer[], int *index);
 
 void serialize_player(struct player *player, uint8_t buffer[]);
 

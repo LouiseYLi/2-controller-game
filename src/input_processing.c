@@ -4,22 +4,25 @@
 #include <errno.h>
 #include <stdio.h>
 
-void serialize_coordinate(int32_t coordinate, uint8_t buffer[]) {
+void serialize_coordinate(int32_t coordinate, uint8_t buffer[], int *index) {
     coordinate = htonl(coordinate);
-
     // TODO: realloc size of buffer if not enough space
     //      i think it should be fine as is though
-
+    memcpy(&buffer[*index], coordinate, sizeof(coordinate));
+    *index += sizeof(coordinate);
 }
 
-void serialize_direction(uint16_t direction, uint8_t buffer[]) {
-    int32_t htons(direction);
+void serialize_direction(uint16_t direction, uint8_t buffer[], int *index) {
+    direction = htons(direction);
+    memcpy(&buffer[*index], direction, sizeof(direction));
+    *index += sizeof(coordinate);
 }
 
 void serialize_player(struct player *player, uint8_t buffer[]) {
-    serialize_unsigned_int(player->x, buffer);
-    serialize_unsigned_int(player->y, buffer);
-    serialize_direction(player->direction, buffer);
+    int index = 0;
+    serialize_unsigned_int(player->x, buffer, &index);
+    serialize_unsigned_int(player->y, buffer, &index);
+    serialize_direction(player->direction, buffer, &index);
 }
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err)
