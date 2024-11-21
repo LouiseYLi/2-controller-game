@@ -23,7 +23,9 @@
 struct network_socket
 {
     // cppcheck-suppress unusedStructMember
-    char *ip;
+    char *src_ip;
+    // cppcheck-suppress unusedStructMember
+    char *dest_ip;
     // cppcheck-suppress unusedStructMember
     in_port_t port;
     // cppcheck-suppress unusedStructMember

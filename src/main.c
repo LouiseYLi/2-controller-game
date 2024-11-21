@@ -16,23 +16,25 @@ static void parse_arguments(int argc, char *argv[], void *arg, int *err)
 {
     int                    option;
     struct network_socket *data = (struct network_socket *)arg;
-    data->ip                    = NULL;
-    while((option = getopt(argc, argv, "i:")) != -1)
+    while((option = getopt(argc, argv, "s:d:")) != -1)
     {
-        if(option == 'i')
+        switch(option)
         {
-            data->ip = optarg;
-        }
-        else
-        {
-            perror("Error: invalid options.");
-            *err = -1;
-            return;
+            case 's':
+                data->src_ip = optarg;
+                break;
+            case 'd':
+                data->dest_ip = optarg;
+                break;
+            default:
+                perror("Error: invalid options.");
+                *err = -1;
+                return;
         }
     }
-    if(data->ip == NULL)
+    if(data->src_ip == NULL || data->dest_ip == NULL)
     {
-        perror("Error: unable to parse ip.");
+        perror("Error found. Missing one or more ip addresses.");
         *err = -1;
     }
 }
@@ -44,7 +46,8 @@ int main(int argc, char *argv[])
     int                   retval = 0;
 
     const char *PORT = "9999";
-    data.ip          = NULL;
+    data.src_ip      = NULL;
+    data.dest_ip     = NULL;
     data.port        = convert_port(PORT, &err);
     data.socket_fd   = 0;
 
@@ -56,12 +59,12 @@ int main(int argc, char *argv[])
     parse_arguments(argc, argv, &data, &err);
     if(err != 0)
     {
-        perror("Error parsing arguments.");
         retval = EXIT_FAILURE;
         goto done;
     }
 
-    printf("ip: %s", data.ip);
+    printf("src ip: %s\n", data.src_ip);
+    printf("dest ip: %s", data.dest_ip);
 
     // gui(&err);
 
