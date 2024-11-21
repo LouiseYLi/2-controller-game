@@ -36,7 +36,15 @@ void serialize_player(const player *p, uint8_t buffer[])
     serialize_uint32_t(p->y, buffer, &index);
 }
 
-void process_keyboard_input(const window *w, player *p, int *err)
+void get_move_function(const game *g, move_function_p *func)
+{
+    if(g->input_type == 1)
+    {
+        *func = &process_controller_input;
+    }
+}
+
+void process_keyboard_input(const game *g, player *p, int *err)
 {
     int direction_x = 0;
     int direction_y = 0;
@@ -65,8 +73,9 @@ void process_keyboard_input(const window *w, player *p, int *err)
     {
         *err = -1;
     }
-    if(!hit_borders(w, p, direction_x, direction_y))
+    if(!hit_borders(g, p, direction_x, direction_y))
     {
+        // can actually move this to hit borders
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
         p->x += direction_x;
@@ -75,7 +84,7 @@ void process_keyboard_input(const window *w, player *p, int *err)
     }
 }
 
-void process_controller_input(const window *w, player *p, int *err)
+void process_controller_input(const game *g, player *p, int *err)
 {
     const uint32_t UP          = 11;
     const uint32_t DOWN        = 12;
@@ -108,7 +117,7 @@ void process_controller_input(const window *w, player *p, int *err)
     {
         *err = -1;
     }
-    if(!hit_borders(w, p, direction_x, direction_y))
+    if(!hit_borders(g, p, direction_x, direction_y))
     {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -173,16 +182,16 @@ done:
     SDL_Quit();
 }
 
-int hit_borders(const window *w, void *data, int direction_x, int direction_y)
+int hit_borders(const game *g, void *data, int direction_x, int direction_y)
 {
     const player *p = (player *)data;
     int           x = (int)p->x;
     int           y = (int)p->y;
-    if((x + direction_x) >= w->height || (x + direction_x) <= 0)
+    if((x + direction_x) >= g->height || (x + direction_x) <= 0)
     {
         return 1;
     }
-    if((y + direction_y) >= w->width || (y + direction_y) <= -1)
+    if((y + direction_y) >= g->width || (y + direction_y) <= -1)
     {
         return 1;
     }

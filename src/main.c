@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     // Temp default values for window and players
     const int height = 20;
     const int width  = 30;
-    window    w      = {height, width};
+    game      g      = {1, height, width};
     player    p      = {0, temp_coord, temp_coord, 0};
     player    p2     = {0, temp_coord2, temp_coord2, 0};
     int       err    = 0;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     }
 
     data.socket_fd = setup_network_socket(data.src_ip, data.port, &err);
-    initialize_gui(&w, &p, &p2);
+    initialize_gui(&g, &p, &p2);
 
     // cleanup:
     if(data.socket_fd != 0)

@@ -5,9 +5,10 @@
 
 typedef struct
 {
+    int input_type;
     int width;
     int height;
-} window;
+} game;
 
 typedef struct
 {
@@ -30,6 +31,6 @@ typedef struct
 
 void handle_signal(int signal);
 
-void initialize_gui(const window *w, const player *p, const player *p2);
+void initialize_gui(const game *g, const player *p, const player *p2);
 
 #endif    // GAME_GUI_H

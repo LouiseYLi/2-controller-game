@@ -11,7 +11,7 @@
 //     }
 // }
 
-void initialize_gui(const window *w, const player *p, const player *p2)
+void initialize_gui(const game *g, const player *p, const player *p2)
 {
     WINDOW *gui_window;
 
@@ -27,7 +27,7 @@ void initialize_gui(const window *w, const player *p, const player *p2)
 
     // p.y = (uint32_t)(LINES - 1) / 2;
     // p.x = (uint32_t)(COLS - 1) / 2;
-    gui_window = newwin(w->width, w->height, 1, 1);
+    gui_window = newwin(g->width, g->height, 1, 1);
     keypad(gui_window, TRUE);
     refresh();
     box(gui_window, 0, 0);
