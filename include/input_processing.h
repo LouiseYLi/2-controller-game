@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// TODO: add sequence number/packet id to player struct for serializing
+//      receiving peer must parse and check packet id
 typedef struct
 {
     uint32_t x;
@@ -13,7 +15,7 @@ typedef struct
     uint16_t direction;
 } player;
 
-void new_player_buffer(uint8_t **buffer, int *err);
+uint8_t *new_player_buffer(const player *p, int *err);
 
 void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index);
 

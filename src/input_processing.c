@@ -4,14 +4,16 @@
 #include <errno.h>
 #include <stdio.h>
 
-void new_player_buffer(uint8_t **buffer, int *err)
+uint8_t *new_player_buffer(const player *p, int *err)
 {
-    *buffer = (uint8_t *)malloc(2 * sizeof(uint32_t) + sizeof(uint16_t));
-    if(*buffer == NULL)
+    uint8_t *buffer = (uint8_t *)malloc(sizeof(p->x) + sizeof(p->y));
+    if(buffer == NULL)
     {
         perror("Error allocating memory to player buffer.");
         *err = errno;
+        return NULL;
     }
+    return buffer;
 }
 
 void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index)
@@ -23,19 +25,13 @@ void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned i
     *index += sizeof(coordinate);
 }
 
-void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int *index)
-{
-    direction = htons(direction);
-    memcpy(&buffer[*index], &direction, sizeof(direction));
-    *index += sizeof(direction);
-}
+// TODO: Make sure coordinates are updated before serializing/pickling
 
 void serialize_player(const player *p, uint8_t buffer[])
 {
     long unsigned int index = 0;
     serialize_coordinate(p->x, buffer, &index);
     serialize_coordinate(p->y, buffer, &index);
-    serialize_direction(p->direction, buffer, &index);
 }
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err)

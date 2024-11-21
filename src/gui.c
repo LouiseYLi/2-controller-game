@@ -37,7 +37,7 @@ void gui(/*TODO: add this back void *data,*/ int *err)
     {
         clear();
         get_input(&p, err);
-        // TODO: serialize player struct
+        // TODO: serialize player struct 
         // TODO: write serialized data to socket, asynchronous, must SYNC
 
         // TODO: retrieve and deserialize any data from socket
