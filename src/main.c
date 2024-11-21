@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define temp_coord 5
+#define temp_coord2 10
+
 // TODO: implement socket operations
 // TODO: implement "other" peer
 // TODO: Implement sockets for peer
@@ -42,6 +45,12 @@ static void parse_arguments(int argc, char *argv[], void *arg, int *err)
 int main(int argc, char *argv[])
 {
     struct network_socket data;
+    // Temp default values for window and players
+    const int             height = 20;
+    const int             width  = 20;
+    window                w      = {height, width};
+    player                p      = {0, temp_coord, temp_coord, 0};
+    player                p2     = {0, temp_coord2, temp_coord2, 0};
     int                   err    = 0;
     int                   retval = 0;
 
@@ -64,7 +73,7 @@ int main(int argc, char *argv[])
     }
 
     data.socket_fd = setup_network_socket(data.src_ip, data.port, &err);
-    gui(&err);
+    initialize_gui(&w, &p, &p2);
 
     // cleanup:
     if(data.socket_fd != 0)

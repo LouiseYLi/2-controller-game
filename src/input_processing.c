@@ -6,7 +6,7 @@
 
 uint8_t *new_player_buffer(const player *p, int *err)
 {
-    uint8_t *buffer = (uint8_t *)malloc(sizeof(p->x) + sizeof(p->y));
+    uint8_t *buffer = (uint8_t *)malloc(sizeof(p->id) + sizeof(p->x) + sizeof(p->y));
     if(buffer == NULL)
     {
         perror("Error allocating memory to player buffer.");
@@ -16,13 +16,13 @@ uint8_t *new_player_buffer(const player *p, int *err)
     return buffer;
 }
 
-void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index)
+void serialize_uint32_t(uint32_t value, uint8_t buffer[], long unsigned int *index)
 {
-    coordinate = htonl(coordinate);
+    value = htonl(value);
     // TODO: realloc size of buffer if not enough space
     //      i think it should be fine as is though
-    memcpy(&buffer[*index], &coordinate, sizeof(coordinate));
-    *index += sizeof(coordinate);
+    memcpy(&buffer[*index], &value, sizeof(value));
+    *index += sizeof(value);
 }
 
 // TODO: Make sure coordinates are updated before serializing/pickling
@@ -30,8 +30,9 @@ void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned i
 void serialize_player(const player *p, uint8_t buffer[])
 {
     long unsigned int index = 0;
-    serialize_coordinate(p->x, buffer, &index);
-    serialize_coordinate(p->y, buffer, &index);
+    serialize_uint32_t(p->id, buffer, &index);
+    serialize_uint32_t(p->x, buffer, &index);
+    serialize_uint32_t(p->y, buffer, &index);
 }
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err)

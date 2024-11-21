@@ -10,6 +10,7 @@
 //      receiving peer must parse and check packet id
 typedef struct
 {
+    uint32_t id;
     uint32_t x;
     uint32_t y;
     uint16_t direction;
@@ -17,7 +18,7 @@ typedef struct
 
 uint8_t *new_player_buffer(const player *p, int *err);
 
-void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index);
+void serialize_uint32_t(uint32_t value, uint8_t buffer[], long unsigned int *index);
 
 void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int *index);
 
