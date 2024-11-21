@@ -11,9 +11,12 @@ void handle_signal(int signal)
     }
 }
 
-void gui(int *err)
+void gui(/*TODO: add this back void *data,*/ int *err)
 {
     player p = {0, 0, 0};
+
+    // TODO: remove lines to disable unused var warning
+    // struct network_socket *socket_data = (struct network_socket *)data;
 
     initscr();
     noecho();
@@ -40,6 +43,7 @@ void gui(int *err)
         // TODO: retrieve and deserialize any data from socket
         // TODO: update gui on this side
         process_input(&COLS, &LINES, &p, err);
+
         if(*err != 0)
         {
             perror("Error processing the button input.");

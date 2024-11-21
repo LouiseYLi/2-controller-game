@@ -15,6 +15,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// TODO: ensure each packet delivered has packet id
+// TODO: when receiving, check if new packet_id is > than current
+//       packet_id. if >, then continue to process, else ignore it
+// static int packet_id = 0;
+
 // Compiler thinks that I'm not using the struct members because the struct
 //  is in a separate file.
 // I made struct in a separate file to import because I didn't want to

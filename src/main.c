@@ -63,10 +63,8 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    printf("src ip: %s\n", data.src_ip);
-    printf("dest ip: %s", data.dest_ip);
-
-    // gui(&err);
+    data.socket_fd = setup_network_socket(data.src_ip, data.port, &err);
+    gui(&err);
 
     // cleanup:
     if(data.socket_fd != 0)

@@ -1,16 +1,23 @@
 #ifndef GAME_INPUT_PROCESSING_H
 #define GAME_INPUT_PROCESSING_H
 
+#include "network_utils.h"
 #include <SDL2/SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 
 typedef struct
 {
-    int      x;
-    int      y;
-    uint32_t direction;
+    int32_t  x;
+    int32_t  y;
+    uint16_t direction;
 } player;
+
+void serialize_coordinate(int32_t coordinate, uint8_t buffer[]);
+
+void serialize_direction(uint16_t direction, uint8_t buffer[]);
+
+void serialize_player(struct player *player, uint8_t buffer[]);
 
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err);
 

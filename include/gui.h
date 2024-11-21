@@ -16,6 +16,6 @@ static int terminate = 0;
 
 void handle_signal(int signal);
 
-void gui(int *err);
+void gui(/*TODO: add this back void *data,*/ int *err);
 
 #endif    // GAME_GUI_H

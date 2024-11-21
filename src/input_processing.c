@@ -4,6 +4,24 @@
 #include <errno.h>
 #include <stdio.h>
 
+void serialize_coordinate(int32_t coordinate, uint8_t buffer[]) {
+    coordinate = htonl(coordinate);
+
+    // TODO: realloc size of buffer if not enough space
+    //      i think it should be fine as is though
+
+}
+
+void serialize_direction(uint16_t direction, uint8_t buffer[]) {
+    int32_t htons(direction);
+}
+
+void serialize_player(struct player *player, uint8_t buffer[]) {
+    serialize_unsigned_int(player->x, buffer);
+    serialize_unsigned_int(player->y, buffer);
+    serialize_direction(player->direction, buffer);
+}
+
 void process_input(const int *total_cols, const int *total_lines, void *data, int *err)
 {
     player        *p           = (player *)data;
