@@ -15,6 +15,21 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// Compiler thinks that I'm not using the struct members because the struct
+//  is in a separate file.
+// I made struct in a separate file to import because I didn't want to
+//  declare it multiple times for the program, that's why I disabled the
+//  unusedStructMember warnings.
+struct network_socket
+{
+    // cppcheck-suppress unusedStructMember
+    char *ip;
+    // cppcheck-suppress unusedStructMember
+    in_port_t port;
+    // cppcheck-suppress unusedStructMember
+    int socket_fd;
+};
+
 in_port_t convert_port(const char *str, int *err);
 
 void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err);
