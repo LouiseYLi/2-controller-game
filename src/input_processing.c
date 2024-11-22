@@ -36,7 +36,7 @@ void serialize_player(const player *p, uint8_t buffer[])
     serialize_uint32_t(p->y, buffer, &index);
 }
 
-void get_move_function(const game *g, move_function_p *func)
+void set_move_function(const game *g, move_function_p *func)
 {
     if(g->input_type == 1)
     {

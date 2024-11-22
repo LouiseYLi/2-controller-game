@@ -19,7 +19,7 @@ void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int
 
 void serialize_player(const player *p, uint8_t buffer[]);
 
-void get_move_function(const game *g, move_function_p *func);
+void set_move_function(const game *g, move_function_p *func);
 
 void process_keyboard_input(const game *g, player *p, int *err);
 

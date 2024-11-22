@@ -5,6 +5,14 @@
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
 
+void handle_signal(int signal)
+{
+    if(signal == SIGINT)
+    {
+        terminate = 1;
+    }
+}
+
 in_port_t convert_port(const char *str, int *err)
 {
     in_port_t port;
@@ -46,7 +54,7 @@ done:
     return port;
 }
 
-void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
+struct sockaddr_in *setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
 {
     in_port_t net_port;
 
@@ -62,20 +70,23 @@ void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, c
         addr->ss_family     = AF_INET;
         ipv4_addr->sin_port = net_port;
         *addr_len           = sizeof(struct sockaddr_in);
+        return ipv4_addr;
     }
-    else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
-    {
-        struct sockaddr_in6 *ipv6_addr;
+    // else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
+    // {
+    //     struct sockaddr_in6 *ipv6_addr;
 
-        ipv6_addr            = (struct sockaddr_in6 *)addr;
-        addr->ss_family      = AF_INET6;
-        ipv6_addr->sin6_port = net_port;
-        *addr_len            = sizeof(struct sockaddr_in6);
-    }
+    //     ipv6_addr            = (struct sockaddr_in6 *)addr;
+    //     addr->ss_family      = AF_INET6;
+    //     ipv6_addr->sin6_port = net_port;
+    //     *addr_len            = sizeof(struct sockaddr_in6);
+    //     return ipv6_addr;
+    // }
     else
     {
         fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
         *err = errno;
+        return NULL;
     }
 }
 
@@ -113,14 +124,21 @@ void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, in
     }
 }
 
-int setup_network_socket(const char *address, in_port_t port, int *err)
+int setup_network_socket(struct network_socket *data, const char *address, in_port_t port, int *err)
 {
     struct sockaddr_storage addr;
+    struct sockaddr_storage non_local_addr;
     socklen_t               addr_len;
     int                     socket_fd;
 
     // I dereferenced addr to get the address of it
-    setup_network_address(&addr, &addr_len, address, port, err);
+    // Assigned local ipv4 addr to member in struct
+    data->src_ipv4_addr = setup_network_address(&addr, &addr_len, address, port, err);
+    // TODO: if null...
+
+    // Set up non-local ipv4 addr and assign to struct
+    data->dest_ipv4_addr = setup_network_address(&non_local_addr, &addr_len, address, port, err);
+    // TODO: if null...
 
     if(*err != 0)
     {
@@ -151,6 +169,44 @@ int setup_network_socket(const char *address, in_port_t port, int *err)
     }
 done:
     return socket_fd;
+}
+
+//TODO: this whole section
+void handle_peer(struct network_socket *data, const game *g, const player *local_player, const player *other_player, int *err)
+{
+    ssize_t         bytes_read;
+    uint8_t        *buffer   = new_player_buffer(local_player, err);
+    socklen_t       addr_len = sizeof(data->dest_ipv4_addr);
+    move_function_p move;
+    if(signal(SIGINT, handle_signal) == SIG_ERR)
+    {
+        perror("Error setting up signal handler");
+        return;
+    }
+    while(terminate != 0)
+    {
+        bytes_read = 0;
+        bytes_read = recvfrom(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len);
+        if(bytes_read > 0)
+        {
+            player temp_player;
+            memcpy(&temp_player, buffer, sizeof(temp_player));
+            printf("Packet id: %u", temp_player.id);
+            printf("x: %u", temp_player.x);
+            printf("y: %u", temp_player.y);
+            // assign other_player with temp_player
+
+            set_move_function(g, move);
+            move(g, other_player, err);
+
+            // send local_player to socket
+            if(!sendto(socket_fd, buffer, sizeof(buffer), 0, (sockaddr)data->src_ip, sizeof((sockaddr)data->src_ip)))
+            {
+                perror("Error sending data.");
+                *err = errno;
+            }
+        }
+    }
 }
 
 void close_socket(int socket_fd)

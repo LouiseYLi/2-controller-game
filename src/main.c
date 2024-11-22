@@ -72,8 +72,9 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    data.socket_fd = setup_network_socket(data.src_ip, data.port, &err);
+    data.socket_fd = setup_network_socket(&data, data.src_ip, data.port, &err);
     initialize_gui(&g, &p, &p2);
+    handle_peer(&data, &g, &p, &p2, &err);
 
     // cleanup:
     if(data.socket_fd != 0)
