@@ -171,7 +171,7 @@ done:
     return socket_fd;
 }
 
-//TODO: this whole section
+// TODO: this whole section
 void handle_peer(struct network_socket *data, const game *g, const player *local_player, const player *other_player, int *err)
 {
     ssize_t         bytes_read;
@@ -200,7 +200,7 @@ void handle_peer(struct network_socket *data, const game *g, const player *local
             move(g, other_player, err);
 
             // send local_player to socket
-            if(!sendto(socket_fd, buffer, sizeof(buffer), 0, (sockaddr)data->src_ip, sizeof((sockaddr)data->src_ip)))
+            if(!sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len))
             {
                 perror("Error sending data.");
                 *err = errno;
