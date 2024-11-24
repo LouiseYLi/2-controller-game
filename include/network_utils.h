@@ -5,6 +5,7 @@
 #include "input_processing.h"
 #include <arpa/inet.h>
 #include <errno.h>
+#include <ncurses.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <signal.h>
@@ -58,7 +59,7 @@ void handle_signal(int signal);
 
 in_port_t convert_port(const char *str, int *err);
 
-struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err);
+struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port);
 
 void set_socket_flags(int socket_fd, int *err);
 

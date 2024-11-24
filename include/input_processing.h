@@ -23,9 +23,9 @@ void set_move_function(const game *g, move_function_p *func);
 
 void process_keyboard_input(const game *g, player *p, int *err);
 
-void process_controller_input(const game *g, player *p, int *err);
+// void process_controller_input(const game *g, player *p, int *err);
 
-void get_input(void *data, int *err);
+// void get_input(void *data, int *err);
 
 int hit_borders(const game *g, void *data, int direction_x, int direction_y);
 

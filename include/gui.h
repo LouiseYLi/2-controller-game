@@ -15,7 +15,6 @@ typedef struct
     uint32_t id;
     uint32_t x;
     uint32_t y;
-    int      direction;
 } player;
 
 void initialize_gui(const game *g, const player *p, const player *p2);
