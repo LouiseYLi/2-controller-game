@@ -3,6 +3,7 @@
 #include "../include/network_utils.h"
 #include <SDL2/SDL.h>
 #include <errno.h>
+#include <ncurses.h>
 #include <stdio.h>
 
 uint8_t *new_player_buffer(const player *p, int *err)
@@ -43,7 +44,7 @@ void set_move_function(const game *g, move_function_p *func)
 {
     if(g->input_type == 1)
     {
-        *func = &process_controller_input;
+        *func = &process_keyboard_input;
     }
 }
 
@@ -51,6 +52,9 @@ void process_keyboard_input(const game *g, player *p, int *err)
 {
     int direction_x = 0;
     int direction_y = 0;
+
+    // nodelay(stdscr, TRUE);
+    p->direction = getch();
 
     if(p->direction == 'w')
     {
@@ -89,12 +93,12 @@ void process_keyboard_input(const game *g, player *p, int *err)
 
 void process_controller_input(const game *g, player *p, int *err)
 {
-    const uint32_t UP          = 11;
-    const uint32_t DOWN        = 12;
-    const uint32_t LEFT        = 13;
-    const uint32_t RIGHT       = 14;
-    int            direction_x = 0;
-    int            direction_y = 0;
+    const int UP          = 11;
+    const int DOWN        = 12;
+    const int LEFT        = 13;
+    const int RIGHT       = 14;
+    int       direction_x = 0;
+    int       direction_y = 0;
 
     if(p->direction == UP)
     {

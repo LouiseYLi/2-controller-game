@@ -58,13 +58,13 @@ void handle_signal(int signal);
 
 in_port_t convert_port(const char *str, int *err);
 
-struct sockaddr_in *setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err);
+struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err);
 
 void set_socket_flags(int socket_fd, int *err);
 
-void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, int *err);
+void bind_network_socket(int socket_fd, const struct sockaddr_in *addr, socklen_t addr_len, int *err);
 
-int setup_network_socket(struct network_socket *data, const char *address, in_port_t port, int *err);
+int setup_network_socket(struct network_socket *data, const char *local_address, const char *non_local_address, in_port_t port, int *err);
 
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 

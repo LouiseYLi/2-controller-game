@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     int       err    = 0;
     int       retval = 0;
 
-    const char *PORT = "9999";
+    const char *PORT = "5912";
     data.src_ip      = NULL;
     data.dest_ip     = NULL;
     data.port        = convert_port(PORT, &err);
@@ -72,7 +72,14 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    data.socket_fd = setup_network_socket(&data, data.src_ip, data.port, &err);
+    data.socket_fd = setup_network_socket(&data, data.src_ip, data.dest_ip, data.port, &err);
+    if(data.socket_fd < 0)
+    {
+        perror("Error creating socket.");
+        goto done;
+    }
+
+    printf("socket fd %d", data.socket_fd);
     initialize_gui(&g, &p, &p2);
     handle_peer(&data, &g, &p, &p2, &err);
 

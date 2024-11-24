@@ -1,9 +1,13 @@
 #include "../include/network_utils.h"
+#include <ncurses.h>
 
 #define ERR_NONE 0
 #define ERR_NO_DIGITS 1
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
+
+// #define TEMPA 35
+// #define TEMPB 35
 
 void handle_signal(int signal)
 {
@@ -54,7 +58,7 @@ done:
     return port;
 }
 
-struct sockaddr_in *setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
+struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
 {
     in_port_t net_port;
 
@@ -62,26 +66,14 @@ struct sockaddr_in *setup_network_address(struct sockaddr_storage *addr, socklen
     net_port  = htons(port);
     memset(addr, 0, sizeof(*addr));
 
-    if(inet_pton(AF_INET, address, &(((struct sockaddr_in *)addr)->sin_addr)) == 1)
+    printf("preparing setup of address...");
+    if(inet_pton(AF_INET, address, &((addr)->sin_addr)) == 1)
     {
-        struct sockaddr_in *ipv4_addr;
-
-        ipv4_addr           = (struct sockaddr_in *)addr;
-        addr->ss_family     = AF_INET;
-        ipv4_addr->sin_port = net_port;
-        *addr_len           = sizeof(struct sockaddr_in);
-        return ipv4_addr;
+        *addr_len        = sizeof(*addr);
+        addr->sin_family = AF_INET;
+        addr->sin_port   = net_port;
+        return addr;
     }
-    // else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
-    // {
-    //     struct sockaddr_in6 *ipv6_addr;
-
-    //     ipv6_addr            = (struct sockaddr_in6 *)addr;
-    //     addr->ss_family      = AF_INET6;
-    //     ipv6_addr->sin6_port = net_port;
-    //     *addr_len            = sizeof(struct sockaddr_in6);
-    //     return ipv6_addr;
-    // }
     fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
     *err = errno;
     return NULL;
@@ -109,9 +101,9 @@ void set_socket_flags(int socket_fd, int *err)
     }
 }
 
-void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, int *err)
+void bind_network_socket(int socket_fd, const struct sockaddr_in *addr, socklen_t addr_len, int *err)
 {
-    int result = bind(socket_fd, (const struct sockaddr *)addr, addr_len);
+    int result = bind(socket_fd, addr, addr_len);
 
     if(result == -1)
     {
@@ -121,32 +113,27 @@ void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, in
     }
 }
 
-int setup_network_socket(struct network_socket *data, const char *address, in_port_t port, int *err)
+int setup_network_socket(struct network_socket *data, const char *local_address, const char *non_local_address, in_port_t port, int *err)
 {
-    struct sockaddr_storage addr;
-    struct sockaddr_storage non_local_addr;
-    socklen_t               addr_len;
-    int                     socket_fd;
+    struct sockaddr_in addr;
+    socklen_t          addr_len;
+    int                socket_fd;
 
     // I dereferenced addr to get the address of it
     // Assigned local ipv4 addr to member in struct
-    data->src_ipv4_addr = setup_network_address(&addr, &addr_len, address, port, err);
-    // TODO: if null...
-
-    // Set up non-local ipv4 addr and assign to struct
-    data->dest_ipv4_addr = setup_network_address(&non_local_addr, &addr_len, address, port, err);
-    // TODO: if null...
-
+    data->src_ipv4_addr = setup_network_address(&addr, &addr_len, local_address, port, err);
     if(*err != 0)
     {
+        perror("Error in setting up local ipv4 address.");
         socket_fd = -1;
         goto done;
     }
-    // ERROR HERE
-    socket_fd = socket(addr.ss_family, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
+
+    socket_fd = socket(AF_INET, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
 
     if(socket_fd == -1)
     {
+        perror("Error in creating socket.");
         *err = errno;
         goto done;
     }
@@ -154,16 +141,28 @@ int setup_network_socket(struct network_socket *data, const char *address, in_po
     set_socket_flags(socket_fd, err);
     if(*err != 0)
     {
+        perror("Error setting socket flag to non-blocking.");
         socket_fd = -1;
         goto done;
     }
 
-    bind_network_socket(socket_fd, &addr, addr_len, err);
+    bind_network_socket(socket_fd, data->src_ipv4_addr, addr_len, err);
     if(*err != 0)
     {
+        perror("Error binding socket.");
         socket_fd = -1;
         goto done;
     }
+
+    // Set up non-local ipv4 addr and assign to struct
+    data->dest_ipv4_addr = setup_network_address(&addr, &addr_len, non_local_address, port, err);
+    if(*err != 0)
+    {
+        perror("Error in setting up target ipv4 address.");
+        socket_fd = -1;
+        goto done;
+    }
+    printf("setup socket successfully");
 done:
     return socket_fd;
 }
@@ -173,38 +172,23 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
 {
     ssize_t         bytes_read;
     ssize_t         bytes_written;
-    move_function_p move;
+    move_function_p move_func;
     socklen_t       addr_len = sizeof(*(data->dest_ipv4_addr));
     uint8_t        *buffer   = new_player_buffer(local_player, err);
-
-    set_move_function(g, &move);
+    printf("1");
+    set_move_function(g, &move_func);
 
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
         perror("Error setting up signal handler");
         return;
     }
+    printf("2");
+    refresh();
+
     // Server loop
     while(terminate != 0)
     {
-        printf("here\n");
-        // Clear buffer for writing
-        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
-
-        // Move the local player
-        move(g, local_player, err);
-
-        // Serialize local player, to prepare for data sending
-        serialize_player(local_player, buffer);
-
-        bytes_written = sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, addr_len);
-        if(bytes_written == -1)
-        {
-            perror("Error sending local player data.");
-            *err = errno;
-            goto cleanup;
-        }
-
         // Clear buffer to for reading
         memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
 
@@ -218,15 +202,49 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
             printf("y: %u", other_player->y);
             // assign other_player with temp_player
 
-            move(g, other_player, err);
+            // Clears previous other_player location
+            mvaddch((int)other_player->y, (int)other_player->x, ' ');
+            // Sets the new coordinates of other_player
+            move_func(g, other_player, err);
+            // Displays other_player at the new location
+            mvaddch((int)other_player->y, (int)other_player->x, '*');
+            refresh();
         }
-        else if(bytes_read == -1)
-        {    // If read fails
+        else
+        {
+            if(errno == EWOULDBLOCK)
+            {
+                // no data available, try again later
+                continue;
+            }
             perror("Error receiving other player data.");
             *err = errno;
             goto cleanup;
         }
+
+        // Clear buffer for writing
+        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
+
+        // Clears previous local_player location
+        mvaddch((int)local_player->y, (int)local_player->x, ' ');
+        // Sets the new coordinates of local_player
+        move_func(g, local_player, err);
+        // Displays local_player at the new location
+        mvaddch((int)local_player->y, (int)local_player->x, '*');
+
+        // Serialize local player, to prepare for data sending
+        serialize_player(local_player, buffer);
+
+        bytes_written = sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, addr_len);
+        if(bytes_written == -1)
+        {
+            perror("Error sending local player data.");
+            *err = errno;
+            goto cleanup;
+        }
+        refresh();
     }
+    printf("3");
 cleanup:
     free(buffer);
 }
