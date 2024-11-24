@@ -14,6 +14,9 @@ uint8_t *new_player_buffer(const player *p, int *err)
         *err = errno;
         return NULL;
     }
+    // Copies player content into buffer
+    // memcpy(buffer, p, sizeof(*p));
+
     return buffer;
 }
 

@@ -66,7 +66,7 @@ void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, in
 
 int setup_network_socket(struct network_socket *data, const char *address, in_port_t port, int *err);
 
-void handle_peer(struct network_socket *data, const game *g, const player *local_player, const player *other_player, int *err);
+void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 
 void close_socket(int socket_fd);
 

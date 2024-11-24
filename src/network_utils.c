@@ -82,12 +82,9 @@ struct sockaddr_in *setup_network_address(struct sockaddr_storage *addr, socklen
     //     *addr_len            = sizeof(struct sockaddr_in6);
     //     return ipv6_addr;
     // }
-    else
-    {
-        fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
-        *err = errno;
-        return NULL;
-    }
+    fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
+    *err = errno;
+    return NULL;
 }
 
 void set_socket_flags(int socket_fd, int *err)
@@ -172,41 +169,66 @@ done:
 }
 
 // TODO: this whole section
-void handle_peer(struct network_socket *data, const game *g, const player *local_player, const player *other_player, int *err)
+void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
     ssize_t         bytes_read;
-    uint8_t        *buffer   = new_player_buffer(local_player, err);
-    socklen_t       addr_len = sizeof(data->dest_ipv4_addr);
+    ssize_t         bytes_written;
     move_function_p move;
+    socklen_t       addr_len = sizeof(*(data->dest_ipv4_addr));
+    uint8_t        *buffer   = new_player_buffer(local_player, err);
+
+    set_move_function(g, &move);
+
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
         perror("Error setting up signal handler");
         return;
     }
+    // Server loop
     while(terminate != 0)
     {
-        bytes_read = 0;
+        printf("here\n");
+        // Clear buffer for writing
+        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
+
+        // Move the local player
+        move(g, local_player, err);
+
+        // Serialize local player, to prepare for data sending
+        serialize_player(local_player, buffer);
+
+        bytes_written = sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, addr_len);
+        if(bytes_written == -1)
+        {
+            perror("Error sending local player data.");
+            *err = errno;
+            goto cleanup;
+        }
+
+        // Clear buffer to for reading
+        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
+
         bytes_read = recvfrom(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len);
         if(bytes_read > 0)
-        {
-            player temp_player;
-            memcpy(&temp_player, buffer, sizeof(temp_player));
-            printf("Packet id: %u", temp_player.id);
-            printf("x: %u", temp_player.x);
-            printf("y: %u", temp_player.y);
+        {    // If data found
+            // player temp_player;
+            memcpy(other_player, buffer, sizeof(*other_player));
+            printf("Packet id: %u", other_player->id);
+            printf("x: %u", other_player->x);
+            printf("y: %u", other_player->y);
             // assign other_player with temp_player
 
-            set_move_function(g, move);
             move(g, other_player, err);
-
-            // send local_player to socket
-            if(!sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len))
-            {
-                perror("Error sending data.");
-                *err = errno;
-            }
+        }
+        else if(bytes_read == -1)
+        {    // If read fails
+            perror("Error receiving other player data.");
+            *err = errno;
+            goto cleanup;
         }
     }
+cleanup:
+    free(buffer);
 }
 
 void close_socket(int socket_fd)
