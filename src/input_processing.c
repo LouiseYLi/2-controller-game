@@ -44,7 +44,7 @@ void set_move_function(const game *g, move_function_p *func)
 {
     if(g->input_type == 1)
     {
-        *func = &process_keyboard_input;
+        *func = &process_controller_input;
     }
 }
 
@@ -97,28 +97,31 @@ void process_keyboard_input(const game *g, player *p, int *err)
 void process_controller_input(const game *g, player *p, int *err)
 {
     SDL_Event event;
+    int       direction;
     int       direction_x = 0;
     int       direction_y = 0;
     while(SDL_PollEvent(&event))
     {
-        if(event.type == SDL_CONTROLLERBUTTONDOWN)
+        if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
         {
-            if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_UP))
+            mvaddch((int)p->y, (int)p->x, ' ');
+            direction = event.cbutton.button;
+            if(direction == SDL_CONTROLLER_BUTTON_DPAD_UP)
             {
                 direction_x = 0;
                 direction_y = -1;
             }
-            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN))
+            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
             {
                 direction_x = 0;
                 direction_y = 1;
             }
-            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT))
+            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
             {
                 direction_x = -1;
                 direction_y = 0;
             }
-            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
+            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
             {
                 direction_x = 1;
                 direction_y = 0;
@@ -127,15 +130,16 @@ void process_controller_input(const game *g, player *p, int *err)
             {
                 *err = -1;
             }
-            if(!hit_borders(g, p, direction_x, direction_y))
-            {
+        }
+    }
+    if(!hit_borders(g, p, direction_x, direction_y))
+    {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-                p->x += direction_x;
-                p->y += direction_y;
+        p->x += direction_x;
+        p->y += direction_y;
 #pragma GCC diagnostic pop
-            }
-        }
+        mvaddch((int)p->y, (int)p->x, '*');
     }
 }
 
@@ -161,6 +165,7 @@ void initialize_controller(const SDL_GameController *controller, int *err)
     else
     {
         SDL_Quit();
+        *err = errno;
     }
 }
 

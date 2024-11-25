@@ -30,5 +30,4 @@ void initialize_gui(const game *g, const player *p, const player *p2)
 
     // TODO: add "other" peer player dot
     refresh();
-    getch();
 }
