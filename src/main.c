@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define temp_coord 5
-#define temp_coord2 10
+// #define temp_coord 5
+// #define temp_coord2 10
 
 // TODO: implement socket operations
 // TODO: implement "other" peer
@@ -46,13 +46,13 @@ int main(int argc, char *argv[])
 {
     struct network_socket data;
     // Temp default values for window and players
-    const int height = 20;
-    const int width  = 30;
-    game      g      = {1, height, width, NULL};
-    player    p      = {0, temp_coord, temp_coord};
-    player    p2     = {0, temp_coord2, temp_coord2};
-    int       err    = 0;
-    int       retval = 0;
+    // const int height = 20;
+    // const int width  = 30;
+    // game      g      = {1, height, width, NULL};
+    // player    p      = {0, temp_coord, temp_coord};
+    // player    p2     = {0, temp_coord2, temp_coord2};
+    int err    = 0;
+    int retval = 0;
 
     const char *PORT = "1532";
     data.src_ip      = NULL;
@@ -65,14 +65,14 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    if(g.input_type == 1)
-    {
-        initialize_controller(g.controller, &err);
-        if(err != 0)
-        {
-            goto done;
-        }
-    }
+    // if(g.input_type == 1)
+    // {
+    //     initialize_controller(g.controller, &err);
+    //     if(err != 0)
+    //     {
+    //         goto done;
+    //     }
+    // }
 
     parse_arguments(argc, argv, &data, &err);
     if(err != 0)
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    data.socket_fd = setup_network_socket(&data, data.src_ip, data.dest_ip, data.port, &err);
+    setup_network_socket(&data, &err);
     if(data.socket_fd < 0)
     {
         perror("Error creating socket.");
@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
     }
 
     printf("socket fd %d", data.socket_fd);
-    initialize_gui(&g, &p, &p2);
-    handle_peer(&data, &g, &p, &p2, &err);
+    // initialize_gui(&g, &p, &p2);
+    // handle_peer(&data, &g, &p, &p2, &err);
 
     // cleanup:
     if(data.socket_fd != 0 && data.socket_fd != -1)

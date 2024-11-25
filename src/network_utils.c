@@ -8,10 +8,6 @@
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
 
-#define TEMPA 35
-
-#define TEMPHUNNO 100
-
 // #define TEMPB 35
 
 void handle_signal(int signal)
@@ -63,23 +59,38 @@ done:
     return port;
 }
 
-struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port)
+void convert_address(const char *address, struct sockaddr_storage *addr)
 {
-    in_port_t net_port;
-
-    *addr_len = 0;
-    net_port  = htons(port);
     memset(addr, 0, sizeof(*addr));
 
-    *addr_len             = sizeof(*addr);
-    addr->sin_family      = AF_INET;
-    addr->sin_port        = net_port;
-    addr->sin_addr.s_addr = inet_addr(address);
-    return addr;
+    if(inet_pton(AF_INET, address, &(((struct sockaddr_in *)addr)->sin_addr)) == 1)
+    {
+        addr->ss_family = AF_INET;
+    }
+    else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
+    {
+        addr->ss_family = AF_INET6;
+    }
+    else
+    {
+        fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
+        exit(EXIT_FAILURE);
+    }
+}
 
-    // fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
-    // *err = errno;
-    // return NULL;
+int socket_create(int domain, int type, int protocol)
+{
+    int sockfd;
+
+    sockfd = socket(domain, type, protocol);
+
+    if(sockfd == -1)
+    {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    return sockfd;
 }
 
 void set_socket_flags(int socket_fd, int *err)
@@ -107,168 +118,111 @@ void set_socket_flags(int socket_fd, int *err)
     }
 }
 
-void bind_network_socket(int socket_fd, const struct sockaddr *addr, socklen_t addr_len, int *err)
+void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
 {
-    int result = bind(socket_fd, addr, addr_len);
+    char      addr_str[INET6_ADDRSTRLEN];
+    socklen_t addr_len;
+    void     *vaddr;
+    in_port_t net_port;
 
-    if(result == -1)
+    net_port = htons(port);
+
+    if(addr->ss_family == AF_INET)
     {
-        close(socket_fd);
-        *err = errno;
-        return;
+        struct sockaddr_in *ipv4_addr;
+
+        ipv4_addr           = (struct sockaddr_in *)addr;
+        addr_len            = sizeof(*ipv4_addr);
+        ipv4_addr->sin_port = net_port;
+        vaddr               = (void *)&(((struct sockaddr_in *)addr)->sin_addr);
     }
+    else if(addr->ss_family == AF_INET6)
+    {
+        struct sockaddr_in6 *ipv6_addr;
+
+        ipv6_addr            = (struct sockaddr_in6 *)addr;
+        addr_len             = sizeof(*ipv6_addr);
+        ipv6_addr->sin6_port = net_port;
+        vaddr                = (void *)&(((struct sockaddr_in6 *)addr)->sin6_addr);
+    }
+    else
+    {
+        fprintf(stderr, "Internal error: addr->ss_family must be AF_INET or AF_INET6, was: %d\n", addr->ss_family);
+        exit(EXIT_FAILURE);
+    }
+
+    if(inet_ntop(addr->ss_family, vaddr, addr_str, sizeof(addr_str)) == NULL)
+    {
+        perror("inet_ntop");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Binding to: %s:%u\n", addr_str, port);
+
+    if(bind(sockfd, (struct sockaddr *)addr, addr_len) == -1)
+    {
+        perror("Binding failed");
+        fprintf(stderr, "Error code: %d\n", errno);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Bound to socket: %s:%u\n", addr_str, port);
 }
 
-int setup_network_socket(struct network_socket *data, const char *local_address, const char *non_local_address, in_port_t port, int *err)
+void setup_network_socket(struct network_socket *data, int *err)
 {
-    struct sockaddr_in addr;
-    socklen_t          addr_len;
-    socklen_t          peer_addr_len;
-    int                socket_fd;
-
-    // I dereferenced addr to get the address of it
-    // Assigned local ipv4 addr to member in struct
-    data->src_ipv4_addr = setup_network_address(&addr, &addr_len, local_address, port);
-    // if(errno != 0)
-    // {
-    //     perror("Error in setting up local ipv4 address.");
-    //     socket_fd = -1;
-    //     goto done;
-    // }
-
-    socket_fd = socket(AF_INET, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
-
-    if(socket_fd == -1)
-    {
-        perror("Error in creating socket.");
-        *err = errno;
-        goto done;
-    }
-
-    set_socket_flags(socket_fd, err);
+    struct sockaddr_storage addr;
+    convert_address(data->src_ip, &addr);
+    data->socket_fd = socket_create(addr.ss_family, SOCK_DGRAM, 0);
+    socket_bind(data->socket_fd, &addr, data->port);
+    *err = errno;
     if(*err != 0)
     {
-        perror("Error setting socket flag to non-blocking.");
-        socket_fd = -1;
-        goto done;
+        perror("Error in setup_network_socket");
     }
-
-    bind_network_socket(socket_fd, (struct sockaddr *)data->src_ipv4_addr, addr_len, err);
-    if(*err != 0)
-    {
-        perror("Error binding socket.");
-        socket_fd = -1;
-        goto done;
-    }
-
-    // Set up non-local ipv4 addr and assign to struct
-    data->dest_ipv4_addr = setup_network_address(&addr, &peer_addr_len, non_local_address, port);
-    // if(errno != 0)
-    // {
-    //     perror("Error in setting up target ipv4 address.");
-    //     socket_fd = -1;
-    //     goto done;
-    // }
-    printf("setup socket successfully");
-done:
-    return socket_fd;
 }
 
-void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
-{
-    move_function_p move_func;
-    char            error_message[TEMPHUNNO];
+// void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
+// {
+// move_function_p move_func;
 
-    socklen_t addr_len = sizeof(*(data->dest_ipv4_addr));
-    uint8_t  *buffer   = new_player_buffer(local_player, err);
-    printf("1");
-    set_move_function(g, &move_func);
+// socklen_t addr_len = sizeof(*(data->dest_ipv4_addr));
+// uint8_t *buffer = new_player_buffer(local_player, err);
+// printf("beginning of handle_peer\n");
+// set_move_function(g, &move_func);
 
-    if(signal(SIGINT, handle_signal) == SIG_ERR)
-    {
-        perror("Error setting up signal handler");
-        return;
-    }
-    printf("2");
+// if(signal(SIGINT, handle_signal) == SIG_ERR)
+// {
+//     perror("Error setting up signal handler");
+//     return;
+// }
 
-    // Server loop
-    while(terminate != 1)
-    {
-        ssize_t bytes_read;
-        ssize_t bytes_written;
-        int     original_x;
-        int     original_y;
+// // Server loop
+// while(terminate != 0)
+// {
+//     // ssize_t bytes_read;
+//     // ssize_t bytes_written;
+//     // int     original_x;
+//     // int     original_y;
 
-        // Clear buffer to for reading
-        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
+//     // char buffer[1];
 
-        bytes_read = recvfrom(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len);
-        if(bytes_read > 0)
-        {    // If data found
-            // Clears previous other_player location
-            mvaddch((int)other_player->y, (int)other_player->x, ' ');
+//     // bytes_read = recvfrom();
+//     // if (bytes_read > 0) {
+//     //     printf("%c", buffer[0]);
+//     // } else {
+//     //     if (errno == EWOULDBLOCK) {
+//     //         goto send_data;
+//     //     }
+//     // }
 
-            memcpy(other_player, buffer, sizeof(*other_player));
-            printf("Packet id: %u", other_player->id);
-            printf("x: %u", other_player->x);
-            printf("y: %u", other_player->y);
-
-            // Sets the new coordinates of other_player
-            move_func(g, other_player, err);
-            // Displays other_player at the new location
-            mvaddch((int)other_player->y, (int)other_player->x, '*');
-            refresh();
-        }
-        else
-        {
-            if(errno == EWOULDBLOCK)
-            {
-                // no data available, try again later
-                goto send_data;
-            }
-            perror("Error receiving other player data.");
-            *err = errno;
-            goto cleanup;
-        }
-    send_data:
-        // Clear buffer for writing
-        memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
-
-        original_x = (int)local_player->x;
-        original_y = (int)local_player->y;
-
-        // Sets the new coordinates of local_player
-        move_func(g, local_player, err);
-        // Clears original local_player location
-        mvaddch(original_y, original_x, ' ');
-        // Displays local_player at the new location
-        mvaddch((int)local_player->y, (int)local_player->x, '*');
-        refresh();
-
-        // Serialize local player, to prepare for data sending
-        serialize_player(local_player, buffer);
-
-        bytes_written = sendto(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, addr_len);
-        if(bytes_written == -1)
-        {
-            if(errno == EWOULDBLOCK)
-            {
-                // Retry later, perhaps with a delay
-                mvprintw(TEMPA, TEMPA, "BLOCKED! continue");
-                continue;
-            }
-            // TODO: Must fix "Address family not supported by protocol."
-            snprintf(error_message, sizeof(error_message), "Error sending local player data: %d", errno);
-            perror(error_message);
-            // perror("Error sending local player data.");
-            *err = errno;
-            goto cleanup;
-        }
-    }
-    printf("3");
-cleanup:
-    free(buffer);
-}
+//     // send_data:
+//     // bytes_written = sendto();
+// }
+// printf("successfully ran handle_peer\n");
+// // cleanup:
+// free(buffer);
+// }
 
 void close_socket(int socket_fd)
 {
