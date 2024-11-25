@@ -7,9 +7,9 @@
 #define ERR_NO_DIGITS 1
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
-// #define tempX 32
 
 #define TEMPA 35
+
 #define TEMPHUNNO 100
 
 // #define TEMPB 35
@@ -65,21 +65,17 @@ done:
 
 struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port)
 {
-    in_port_t           net_port;
-    struct sockaddr_in *ipv4_addr;
+    in_port_t net_port;
 
     *addr_len = 0;
     net_port  = htons(port);
     memset(addr, 0, sizeof(*addr));
 
-    printf("preparing setup of address...");
-
-    ipv4_addr                  = addr;
-    *addr_len                  = sizeof(*addr);
-    ipv4_addr->sin_family      = AF_INET;
-    ipv4_addr->sin_port        = net_port;
-    ipv4_addr->sin_addr.s_addr = inet_addr(address);
-    return ipv4_addr;
+    *addr_len             = sizeof(*addr);
+    addr->sin_family      = AF_INET;
+    addr->sin_port        = net_port;
+    addr->sin_addr.s_addr = inet_addr(address);
+    return addr;
 
     // fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
     // *err = errno;
@@ -111,7 +107,7 @@ void set_socket_flags(int socket_fd, int *err)
     }
 }
 
-void bind_network_socket(int socket_fd, const struct sockaddr_in *addr, socklen_t addr_len, int *err)
+void bind_network_socket(int socket_fd, const struct sockaddr *addr, socklen_t addr_len, int *err)
 {
     int result = bind(socket_fd, addr, addr_len);
 
@@ -133,7 +129,7 @@ int setup_network_socket(struct network_socket *data, const char *local_address,
     // I dereferenced addr to get the address of it
     // Assigned local ipv4 addr to member in struct
     data->src_ipv4_addr = setup_network_address(&addr, &addr_len, local_address, port);
-    // if(*err != 0)
+    // if(errno != 0)
     // {
     //     perror("Error in setting up local ipv4 address.");
     //     socket_fd = -1;
@@ -157,7 +153,7 @@ int setup_network_socket(struct network_socket *data, const char *local_address,
         goto done;
     }
 
-    bind_network_socket(socket_fd, data->src_ipv4_addr, addr_len, err);
+    bind_network_socket(socket_fd, (struct sockaddr *)data->src_ipv4_addr, addr_len, err);
     if(*err != 0)
     {
         perror("Error binding socket.");
@@ -167,7 +163,7 @@ int setup_network_socket(struct network_socket *data, const char *local_address,
 
     // Set up non-local ipv4 addr and assign to struct
     data->dest_ipv4_addr = setup_network_address(&addr, &peer_addr_len, non_local_address, port);
-    // if(*err != 0)
+    // if(errno != 0)
     // {
     //     perror("Error in setting up target ipv4 address.");
     //     socket_fd = -1;
@@ -180,11 +176,8 @@ done:
 
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
-    // ssize_t         bytes_read;
-    // ssize_t         bytes_written;
     move_function_p move_func;
-
-    char error_message[TEMPHUNNO];
+    char            error_message[TEMPHUNNO];
 
     socklen_t addr_len = sizeof(*(data->dest_ipv4_addr));
     uint8_t  *buffer   = new_player_buffer(local_player, err);
@@ -198,8 +191,6 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
     }
     printf("2");
 
-    // mvaddch(tempX, tempX, 'Z');
-    // refresh();
     // Server loop
     while(terminate != 1)
     {
@@ -214,17 +205,13 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         bytes_read = recvfrom(data->socket_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)data->dest_ipv4_addr, &addr_len);
         if(bytes_read > 0)
         {    // If data found
-            // player temp_player;
-
             // Clears previous other_player location
             mvaddch((int)other_player->y, (int)other_player->x, ' ');
-            // refresh();
 
             memcpy(other_player, buffer, sizeof(*other_player));
             printf("Packet id: %u", other_player->id);
             printf("x: %u", other_player->x);
             printf("y: %u", other_player->y);
-            // assign other_player with temp_player
 
             // Sets the new coordinates of other_player
             move_func(g, other_player, err);
@@ -244,7 +231,6 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
             goto cleanup;
         }
     send_data:
-
         // Clear buffer for writing
         memset(buffer, 0, sizeof(local_player->id) + sizeof(local_player->x) + sizeof(local_player->y));
 
@@ -274,7 +260,7 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
             // TODO: Must fix "Address family not supported by protocol."
             snprintf(error_message, sizeof(error_message), "Error sending local player data: %d", errno);
             perror(error_message);
-            // perror("Error sending local player data. %d", errno);
+            // perror("Error sending local player data.");
             *err = errno;
             goto cleanup;
         }

@@ -1,13 +1,15 @@
 #ifndef GAME_GUI_H
 #define GAME_GUI_H
 
+#include <SDL2/SDL.h>
 #include <stdint.h>
 
 typedef struct
 {
-    int input_type;
-    int width;
-    int height;
+    int                 input_type;
+    int                 width;
+    int                 height;
+    SDL_GameController *controller;
 } game;
 
 typedef struct

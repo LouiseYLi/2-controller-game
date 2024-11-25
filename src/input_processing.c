@@ -94,49 +94,75 @@ void process_keyboard_input(const game *g, player *p, int *err)
     }
 }
 
-// void process_controller_input(const game *g, player *p, int *err)
-// {
-//     const int UP          = 11;
-//     const int DOWN        = 12;
-//     const int LEFT        = 13;
-//     const int RIGHT       = 14;
-//     int       direction_x = 0;
-//     int       direction_y = 0;
-//     int       direction;
+void process_controller_input(const game *g, player *p, int *err)
+{
+    SDL_Event event;
+    int       direction_x = 0;
+    int       direction_y = 0;
+    while(SDL_PollEvent(&event))
+    {
+        if(event.type == SDL_CONTROLLERBUTTONDOWN)
+        {
+            if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_UP))
+            {
+                direction_x = 0;
+                direction_y = -1;
+            }
+            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN))
+            {
+                direction_x = 0;
+                direction_y = 1;
+            }
+            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT))
+            {
+                direction_x = -1;
+                direction_y = 0;
+            }
+            else if(SDL_GameControllerGetButton(g->controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
+            {
+                direction_x = 1;
+                direction_y = 0;
+            }
+            else
+            {
+                *err = -1;
+            }
+            if(!hit_borders(g, p, direction_x, direction_y))
+            {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+                p->x += direction_x;
+                p->y += direction_y;
+#pragma GCC diagnostic pop
+            }
+        }
+    }
+}
 
-//     if(direction == UP)
-//     {
-//         direction_x = 0;
-//         direction_y = -1;
-//     }
-//     else if(direction == DOWN)
-//     {
-//         direction_x = 0;
-//         direction_y = 1;
-//     }
-//     else if(direction == LEFT)
-//     {
-//         direction_x = -1;
-//         direction_y = 0;
-//     }
-//     else if(direction == RIGHT)
-//     {
-//         direction_x = 1;
-//         direction_y = 0;
-//     }
-//     else
-//     {
-//         *err = -1;
-//     }
-//     if(!hit_borders(g, p, direction_x, direction_y))
-//     {
-// #pragma GCC diagnostic push
-// #pragma GCC diagnostic ignored "-Wsign-conversion"
-//         p->x += direction_x;
-//         p->y += direction_y;
-// #pragma GCC diagnostic pop
-//     }
-// }
+void initialize_controller(const SDL_GameController *controller, int *err)
+{
+    if(SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
+    {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        *err = errno;
+        return;
+    }
+    if(SDL_NumJoysticks() > 0)
+    {
+        controller = SDL_GameControllerOpen(0);
+        if(!controller)
+        {
+            printf("Could not open game controller: %s\n", SDL_GetError());
+            SDL_Quit();
+            *err = errno;
+            return;
+        }
+    }
+    else
+    {
+        SDL_Quit();
+    }
+}
 
 // void get_input(void *data, int *err)
 // {

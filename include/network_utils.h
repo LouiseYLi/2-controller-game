@@ -63,7 +63,7 @@ struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *a
 
 void set_socket_flags(int socket_fd, int *err);
 
-void bind_network_socket(int socket_fd, const struct sockaddr_in *addr, socklen_t addr_len, int *err);
+void bind_network_socket(int socket_fd, const struct sockaddr *addr, socklen_t addr_len, int *err);
 
 int setup_network_socket(struct network_socket *data, const char *local_address, const char *non_local_address, in_port_t port, int *err);
 

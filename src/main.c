@@ -48,13 +48,13 @@ int main(int argc, char *argv[])
     // Temp default values for window and players
     const int height = 20;
     const int width  = 30;
-    game      g      = {1, height, width};
+    game      g      = {1, height, width, NULL};
     player    p      = {0, temp_coord, temp_coord};
     player    p2     = {0, temp_coord2, temp_coord2};
     int       err    = 0;
     int       retval = 0;
 
-    const char *PORT = "1235";
+    const char *PORT = "1532";
     data.src_ip      = NULL;
     data.dest_ip     = NULL;
     data.port        = convert_port(PORT, &err);
@@ -63,6 +63,15 @@ int main(int argc, char *argv[])
     if(err != 0)
     {
         goto done;
+    }
+
+    if(g.input_type == 1)
+    {
+        initialize_controller(g.controller, &err);
+        if(err != 0)
+        {
+            goto done;
+        }
     }
 
     parse_arguments(argc, argv, &data, &err);
