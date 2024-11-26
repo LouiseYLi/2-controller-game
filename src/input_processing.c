@@ -44,7 +44,7 @@ void set_move_function(const game *g, move_function_p *func)
 {
     if(g->input_type == 1)
     {
-        *func = &process_controller_input;
+        *func = &process_keyboard_input;
     }
 }
 

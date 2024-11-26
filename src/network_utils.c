@@ -78,6 +78,26 @@ void convert_address(const char *address, struct sockaddr_storage *addr)
     }
 }
 
+void get_peer_address_to_host(struct sockaddr_storage *addr, in_port_t port)
+{
+    if(addr->ss_family == AF_INET)
+    {
+        struct sockaddr_in *ipv4_addr;
+
+        ipv4_addr             = (struct sockaddr_in *)addr;
+        ipv4_addr->sin_family = AF_INET;
+        ipv4_addr->sin_port   = htons(port);
+    }
+    else if(addr->ss_family == AF_INET6)
+    {
+        struct sockaddr_in6 *ipv6_addr;
+
+        ipv6_addr              = (struct sockaddr_in6 *)addr;
+        ipv6_addr->sin6_family = AF_INET6;
+        ipv6_addr->sin6_port   = htons(port);
+    }
+}
+
 int socket_create(int domain, int type, int protocol)
 {
     int sockfd;
@@ -109,7 +129,6 @@ void set_socket_flags(int socket_fd, int *err)
 
     // Sets non-blocking flag to socket
     result = fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK);
-    printf("%d", result);
     if(result == -1)
     {
         close(socket_fd);
@@ -167,62 +186,92 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
     }
 
     printf("Bound to socket: %s:%u\n", addr_str, port);
+    printf("testing!!!");
 }
 
-void setup_network_socket(struct network_socket *data, int *err)
+void setup_host_socket(struct network_socket *data, int *err)
 {
     struct sockaddr_storage addr;
+    // Convert host address
     convert_address(data->src_ip, &addr);
     data->socket_fd = socket_create(addr.ss_family, SOCK_DGRAM, 0);
-    socket_bind(data->socket_fd, &addr, data->port);
-    *err = errno;
+    set_socket_flags(data->socket_fd, err);
     if(*err != 0)
     {
-        perror("Error in setup_network_socket");
+        perror("Error setting socket flag to non-blocking.");
+        data->socket_fd = -1;
+        return;
     }
+    socket_bind(data->socket_fd, &addr, data->port);
+    // TODO: use err for err handling (or remove it entirely)
 }
 
-// void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
-// {
-// move_function_p move_func;
+void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
+{
+    move_function_p move_func;
 
-// socklen_t addr_len = sizeof(*(data->dest_ipv4_addr));
-// uint8_t *buffer = new_player_buffer(local_player, err);
-// printf("beginning of handle_peer\n");
-// set_move_function(g, &move_func);
+    struct sockaddr_storage client_addr;
+    socklen_t               client_addr_len;
 
-// if(signal(SIGINT, handle_signal) == SIG_ERR)
-// {
-//     perror("Error setting up signal handler");
-//     return;
-// }
+    uint32_t host_buffer[3];
+    uint32_t client_buffer[3];
 
-// // Server loop
-// while(terminate != 0)
-// {
-//     // ssize_t bytes_read;
-//     // ssize_t bytes_written;
-//     // int     original_x;
-//     // int     original_y;
+    // Convert peer address and set peer to host
+    convert_address(data->dest_ip, &client_addr);
+    get_peer_address_to_host(&client_addr, data->port);
 
-//     // char buffer[1];
+    client_addr_len = sizeof(client_addr);
 
-//     // bytes_read = recvfrom();
-//     // if (bytes_read > 0) {
-//     //     printf("%c", buffer[0]);
-//     // } else {
-//     //     if (errno == EWOULDBLOCK) {
-//     //         goto send_data;
-//     //     }
-//     // }
+    set_move_function(g, &move_func);
 
-//     // send_data:
-//     // bytes_written = sendto();
-// }
-// printf("successfully ran handle_peer\n");
-// // cleanup:
-// free(buffer);
-// }
+    // Server loop
+    while(terminate != 1)
+    {
+        int     original_x;
+        int     original_y;
+        ssize_t bytes_received;
+        ssize_t bytes_sent;
+        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
+        // If data was received
+        if(bytes_received > 0)
+        {
+            // Set original positions
+            original_x = (int)other_player->x;
+            original_y = (int)other_player->y;
+            // Set other_player's coordinates to what was received
+            other_player->y = client_buffer[1];
+            other_player->x = client_buffer[0];
+            // Clear original positions
+            mvaddch(original_y, original_x, ' ');
+            // Move other_player on screen to the newly set positions
+            mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
+            refresh();
+        }
+        else if(errno != EWOULDBLOCK)
+        {
+            perror("Error while receiving data.");
+            break;
+        }
+
+        original_x = (int)local_player->x;
+        original_y = (int)local_player->y;
+        move_func(g, local_player, err);
+        mvaddch(original_y, original_x, ' ');
+        mvaddch((int)local_player->y, (int)local_player->x, '*');
+        refresh();
+
+        host_buffer[0] = local_player->x;
+        host_buffer[1] = local_player->y;
+
+        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&client_addr, client_addr_len);
+        if(bytes_sent < 0 && errno != EWOULDBLOCK)
+        {
+            perror("Error while receiving data.");
+            break;
+        }
+        refresh();
+    }
+}
 
 void close_socket(int socket_fd)
 {

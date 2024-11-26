@@ -6,16 +6,23 @@
 
 typedef struct
 {
-    int                 input_type;
-    int                 width;
-    int                 height;
+    // cppcheck-suppress unusedStructMember
+    int input_type;
+    // cppcheck-suppress unusedStructMember
+    int width;
+    // cppcheck-suppress unusedStructMember
+    int height;
+    // cppcheck-suppress unusedStructMember
     SDL_GameController *controller;
 } game;
 
 typedef struct
 {
+    // cppcheck-suppress unusedStructMember
     uint32_t id;
+    // cppcheck-suppress unusedStructMember
     uint32_t x;
+    // cppcheck-suppress unusedStructMember
     uint32_t y;
 } player;
 

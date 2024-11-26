@@ -61,6 +61,8 @@ in_port_t convert_port(const char *str, int *err);
 
 void convert_address(const char *address, struct sockaddr_storage *addr);
 
+void get_peer_address_to_host(struct sockaddr_storage *addr, in_port_t port);
+
 int socket_create(int domain, int type, int protocol);
 
 struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *addr_len, const char *address, in_port_t port);
@@ -69,9 +71,9 @@ void set_socket_flags(int socket_fd, int *err);
 
 void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
 
-void setup_network_socket(struct network_socket *data, int *err);
+void setup_host_socket(struct network_socket *data, int *err);
 
-void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
+void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 
 void close_socket(int socket_fd);
 
