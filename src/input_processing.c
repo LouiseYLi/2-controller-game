@@ -114,7 +114,7 @@ void process_controller_input(const game *g, player *p, int *err)
     int       direction_y = 0;
     while(SDL_PollEvent(&event))
     {
-        if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
+        if(event.type == SDL_CONTROLLERBUTTONDOWN)
         {
             mvaddch((int)p->y, (int)p->x, ' ');
             direction = event.cbutton.button;

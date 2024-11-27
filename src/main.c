@@ -55,6 +55,11 @@ int main(int argc, char *argv[])
     player p2     = {0, temp_coord2, temp_coord2};
     int    err    = 0;
     int    retval = 0;
+    game      g      = {2, height, width, NULL};
+    player    p      = {0, temp_coord, temp_coord};
+    player    p2     = {0, temp_coord2, temp_coord2};
+    int       err    = 0;
+    int       retval = 0;
 
     const char *PORT = "1532";
 
@@ -71,6 +76,7 @@ int main(int argc, char *argv[])
         goto done;
     }
 
+    // 1 for keyb, 2 for contr, 3 for timer
     if(g.input_type == 2)
     {
         initialize_controller(g.controller, &err);

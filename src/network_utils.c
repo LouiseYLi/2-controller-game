@@ -273,6 +273,12 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         return;
     }
 
+    if(signal(SIGINT, handle_signal) == SIG_ERR)
+    {
+        perror("Error setting up signal handler");
+        return;
+    }
+
     // Convert peer address and set peer to host
     convert_address(data->dest_ip, &client_addr);
     get_peer_address_to_host(&client_addr, data->port);
