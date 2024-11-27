@@ -10,11 +10,8 @@
 
 #define temp_coord 5
 #define temp_coord2 10
-#define sleep_time 100000000
 
-// TODO: implement socket operations
-// TODO: implement "other" peer
-// TODO: Implement sockets for peer
+// #define sleep_time 100000000
 
 static void parse_arguments(int argc, char *argv[], void *arg, int *err)
 {
@@ -45,18 +42,19 @@ static void parse_arguments(int argc, char *argv[], void *arg, int *err)
 
 int main(int argc, char *argv[])
 {
-    struct timespec req;
-    struct timespec rem;
-    //=========
+    // struct timespec req;
+    // struct timespec rem;
+
     struct network_socket data;
     // Temp default values for window and players
     const int height = 20;
     const int width  = 30;
-    game      g      = {1, height, width, NULL};
-    player    p      = {0, temp_coord, temp_coord};
-    player    p2     = {0, temp_coord2, temp_coord2};
-    int       err    = 0;
-    int       retval = 0;
+    // g = {input_type, x, x, x};
+    game   g      = {2, height, width, NULL};
+    player p      = {0, temp_coord, temp_coord};
+    player p2     = {0, temp_coord2, temp_coord2};
+    int    err    = 0;
+    int    retval = 0;
 
     const char *PORT = "1532";
 
@@ -66,21 +64,21 @@ int main(int argc, char *argv[])
     data.socket_fd = 0;
 
     // Set the desired sleep time in nanoseconds
-    req.tv_sec  = 0;
-    req.tv_nsec = sleep_time;    // 100 milliseconds
+    // req.tv_sec  = 0;
+    // req.tv_nsec = sleep_time;    // 100 milliseconds
     if(err != 0)
     {
         goto done;
     }
 
-    // if(g.input_type == 1)
-    // {
-    //     initialize_controller(g.controller, &err);
-    //     if(err != 0)
-    //     {
-    //         goto done;
-    //     }
-    // }
+    if(g.input_type == 2)
+    {
+        initialize_controller(g.controller, &err);
+        if(err != 0)
+        {
+            goto done;
+        }
+    }
 
     parse_arguments(argc, argv, &data, &err);
     if(err != 0)
@@ -96,9 +94,7 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    printf("socket fd %d", data.socket_fd);
-
-    nanosleep(&req, &rem);
+    // nanosleep(&req, &rem);
 
     initialize_gui(&g, &p, &p2);
     handle_peer(&data, &g, &p, &p2, &err);

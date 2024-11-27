@@ -186,7 +186,6 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
     }
 
     printf("Bound to socket: %s:%u\n", addr_str, port);
-    printf("testing!!!");
 }
 
 void setup_host_socket(struct network_socket *data, int *err)
@@ -215,6 +214,12 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
 
     uint32_t host_buffer[3];
     uint32_t client_buffer[3];
+    
+    if(signal(SIGINT, handle_signal) == SIG_ERR)
+    {
+        perror("Error setting up signal handler");
+        return;
+    }
 
     // Convert peer address and set peer to host
     convert_address(data->dest_ip, &client_addr);
@@ -247,7 +252,7 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
             mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
             refresh();
         }
-        else if(errno != EWOULDBLOCK)
+        else if(errno != EWOULDBLOCK)    // If error occurred
         {
             perror("Error while receiving data.");
             break;

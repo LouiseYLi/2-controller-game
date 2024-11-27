@@ -46,6 +46,14 @@ void set_move_function(const game *g, move_function_p *func)
     {
         *func = &process_keyboard_input;
     }
+    else if(g->input_type == 2)
+    {
+        *func = &process_controller_input;
+    }
+    /*else if(g->input_type == 3)
+    {
+        *func = &process_controller_input;
+    } */   // TODO: change input_type = 3 to timer process
 }
 
 void process_keyboard_input(const game *g, player *p, int *err)
