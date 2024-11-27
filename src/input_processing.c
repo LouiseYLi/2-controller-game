@@ -42,7 +42,12 @@ void serialize_player(const player *p, uint8_t buffer[])
 
 void set_move_function(const game *g, move_function_p *func)
 {
-    if(g->input_type == 1)
+    //    if(g->input_type == 1)
+    //    {
+    //        *func = &process_controller_input;
+    //    }
+    //    else
+    if(g->input_type == 2)
     {
         *func = &process_keyboard_input;
     }
@@ -94,72 +99,73 @@ void process_keyboard_input(const game *g, player *p, int *err)
     }
 }
 
-void process_controller_input(const game *g, player *p, int *err)
+void process_controller_input(const game *g, SDL_GameController *controller, player *p, int *err)
 {
-    SDL_Event event;
-    int       direction;
-    int       direction_x = 0;
-    int       direction_y = 0;
-    while(SDL_PollEvent(&event))
+    const int box_width  = 60;
+    const int box_height = 60;
+    mvaddch(box_height, box_width, g->input_type);
+    if(SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP))
     {
-        if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
+        mvprintw(box_height, box_width, "PRESSED UP");
+        p->y -= 1;
+        if(p->y < 2)
         {
-            mvaddch((int)p->y, (int)p->x, ' ');
-            direction = event.cbutton.button;
-            if(direction == SDL_CONTROLLER_BUTTON_DPAD_UP)
-            {
-                direction_x = 0;
-                direction_y = -1;
-            }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
-            {
-                direction_x = 0;
-                direction_y = 1;
-            }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
-            {
-                direction_x = -1;
-                direction_y = 0;
-            }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
-            {
-                direction_x = 1;
-                direction_y = 0;
-            }
-            else
-            {
-                *err = -1;
-            }
+            p->y = 2;
         }
     }
-    if(!hit_borders(g, p, direction_x, direction_y))
+    else if(SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT))
     {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-        p->x += direction_x;
-        p->y += direction_y;
-#pragma GCC diagnostic pop
-        mvaddch((int)p->y, (int)p->x, '*');
+        p->x -= 1;
+        if(p->x < 2)
+        {
+            p->x = 2;
+        }
+    }
+    else if(SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT))
+    {
+        p->x += 1;
+        if(p->x > box_width - 1)
+        {
+            p->x = box_width - 1;
+        }
+    }
+    else if(SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN))
+    {
+        p->y += 1;
+        if(p->y > box_height - 1)
+        {
+            p->y = box_height - 1;
+        }
+    }
+    else
+    {
+        *err = -1;
     }
 }
 
-void initialize_controller(const SDL_GameController *controller, int *err)
+void initialize_controller(SDL_GameController **controller, int *err)
 {
     if(SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
     {
         printf("SDL_Init Error: %s\n", SDL_GetError());
         *err = errno;
-        return;
+    }
+    else
+    {
+        printf("CONTROLLER CONNECTED");
     }
     if(SDL_NumJoysticks() > 0)
     {
-        controller = SDL_GameControllerOpen(0);
-        if(!controller)
+        *controller = SDL_GameControllerOpen(0);
+        if(!*controller)
         {
             printf("Could not open game controller: %s\n", SDL_GetError());
             SDL_Quit();
             *err = errno;
-            return;
+        }
+        else
+        {
+            printf("CONTROLLER FAIL");
         }
     }
     else

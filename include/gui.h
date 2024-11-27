@@ -1,6 +1,7 @@
 #ifndef GAME_GUI_H
 #define GAME_GUI_H
 
+#include "menu.h"
 #include <SDL2/SDL.h>
 #include <stdint.h>
 
@@ -26,6 +27,6 @@ typedef struct
     uint32_t y;
 } player;
 
-void initialize_gui(const game *g, const player *p, const player *p2);
+void initialize_gui(game *g, const player *p, const player *p2);
 
 #endif    // GAME_GUI_H

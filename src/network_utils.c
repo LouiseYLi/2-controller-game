@@ -1,5 +1,6 @@
 #include "../include/network_utils.h"
 #include "../include/gui.h"
+#include "../include/input_processing.h"
 #include <ncurses.h>
 #include <stdio.h>
 
@@ -206,7 +207,7 @@ void setup_host_socket(struct network_socket *data, int *err)
     // TODO: use err for err handling (or remove it entirely)
 }
 
-void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
+void handle_peer(const struct network_socket *data, game *g, player *local_player, player *other_player, int *err)
 {
     move_function_p move_func;
 
@@ -224,13 +225,16 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
 
     set_move_function(g, &move_func);
 
+    initialize_controller(&g->controller, err);
+
     // Server loop
     while(terminate != 1)
     {
-        int     original_x;
-        int     original_y;
-        ssize_t bytes_received;
-        ssize_t bytes_sent;
+        SDL_Event event;
+        int       original_x;
+        int       original_y;
+        ssize_t   bytes_received;
+        ssize_t   bytes_sent;
         bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
         // If data was received
         if(bytes_received > 0)
@@ -255,10 +259,23 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
 
         original_x = (int)local_player->x;
         original_y = (int)local_player->y;
-        move_func(g, local_player, err);
-        mvaddch(original_y, original_x, ' ');
-        mvaddch((int)local_player->y, (int)local_player->x, '*');
-        refresh();
+
+        while(SDL_PollEvent(&event))
+        {
+            if(event.type == SDL_CONTROLLERBUTTONDOWN)
+            {
+                mvaddch((int)local_player->y, (int)local_player->x, '*');
+                process_controller_input(g, g->controller, local_player, err);
+                mvaddch((int)local_player->y, (int)local_player->x, '*');
+            }
+        }
+
+        if(g->input_type > 1)
+        {
+            move_func(g, local_player, err);
+            mvaddch(original_y, original_x, ' ');
+            mvaddch((int)local_player->y, (int)local_player->x, '*');
+        }
 
         host_buffer[0] = local_player->x;
         host_buffer[1] = local_player->y;

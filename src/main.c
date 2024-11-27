@@ -1,6 +1,7 @@
 #include "../include/display.h"
 #include "../include/gui.h"
 #include "../include/input_processing.h"
+#include "../include/menu.h"
 #include "../include/network_utils.h"
 #include <SDL2/SDL.h>
 #include <errno.h>
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
     struct network_socket data;
     // Temp default values for window and players
     const int height = 20;
-    const int width  = 30;
+    const int width  = 60;
     game      g      = {1, height, width, NULL};
     player    p      = {0, temp_coord, temp_coord};
     player    p2     = {0, temp_coord2, temp_coord2};

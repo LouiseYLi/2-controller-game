@@ -23,9 +23,9 @@ void set_move_function(const game *g, move_function_p *func);
 
 void process_keyboard_input(const game *g, player *p, int *err);
 
-void process_controller_input(const game *g, player *p, int *err);
+void process_controller_input(const game *g, SDL_GameController *controller, player *p, int *err);
 
-void initialize_controller(const SDL_GameController *controller, int *err);
+void initialize_controller(SDL_GameController **controller, int *err);
 
 // void get_input(void *data, int *err);
 
