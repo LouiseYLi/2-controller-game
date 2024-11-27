@@ -25,6 +25,8 @@ void process_keyboard_input(const game *g, player *p, int *err);
 
 void process_controller_input(const game *g, player *p, int *err);
 
+void process_timer_input(const game *g, player *p, int *err);
+
 void initialize_controller(const SDL_GameController *controller, int *err);
 
 // void get_input(void *data, int *err);

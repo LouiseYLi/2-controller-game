@@ -73,6 +73,10 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
 
 void setup_host_socket(struct network_socket *data, int *err);
 
+void receive_other_player_data(const struct network_socket *data, player *other_player, struct sockaddr_storage *client_addr, socklen_t *client_addr_len, int *err);
+// cppcheck-suppress constParameterPointer
+void send_local_player_data(const game *g, move_function_p move_func, const struct network_socket *data, player *local_player, struct sockaddr_storage *client_addr, const socklen_t *client_addr_len, int *err);
+
 void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 
 void close_socket(int socket_fd);
