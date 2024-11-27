@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     const int height = 20;
     const int width  = 30;
     // g = {input_type, x, x, x};
-    game   g      = {2, height, width, NULL};
+    game   g      = {1, height, width, NULL};
     player p      = {0, temp_coord, temp_coord};
     player p2     = {0, temp_coord2, temp_coord2};
     int    err    = 0;
