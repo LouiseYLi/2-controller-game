@@ -46,6 +46,10 @@ void set_move_function(const game *g, move_function_p *func)
     {
         *func = &process_keyboard_input;
     }
+    else if(g->input_type == 2)
+    {
+        *func = &process_controller_input;
+    }
 }
 
 void process_keyboard_input(const game *g, player *p, int *err)
@@ -102,7 +106,7 @@ void process_controller_input(const game *g, player *p, int *err)
     int       direction_y = 0;
     while(SDL_PollEvent(&event))
     {
-        if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
+        if(event.type == SDL_CONTROLLERBUTTONDOWN)
         {
             mvaddch((int)p->y, (int)p->x, ' ');
             direction = event.cbutton.button;
@@ -168,61 +172,6 @@ void initialize_controller(const SDL_GameController *controller, int *err)
         *err = errno;
     }
 }
-
-// void get_input(void *data, int *err)
-// {
-//     SDL_Event           event;
-//     player             *p          = (player *)data;
-//     SDL_GameController *controller = NULL;
-
-//     if(SDL_Init(SDL_INIT_GAMECONTROLLER) != 0)
-//     {
-//         perror("SDL_Init Error");
-//         *err = errno;
-//         return;
-//     }
-//     if(SDL_NumJoysticks() > 0)
-//     {
-//         controller = SDL_GameControllerOpen(0);
-//         if(!controller)
-//         {
-//             perror("Unable to open game controller");
-//             *err = errno;
-//             SDL_Quit();
-//             return;
-//         }
-//     }
-//     else
-//     {
-//         perror("No game controllers connected.\n");
-//         *err = errno;
-//         SDL_Quit();
-//         return;
-//     }
-//     while(1)
-//     {
-//         while(SDL_PollEvent(&event))
-//         {
-//             if(event.type == SDL_QUIT)
-//             {
-//                 goto done;
-//             }
-//             if(event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
-//             {
-//                 // printf("Button event: button %d%s\n", event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
-//                 //  up:11
-//                 //  down:12
-//                 //  left:13
-//                 //  right:14
-//                 p->direction = event.cbutton.button;
-//                 goto done;
-//             }
-//         }
-//     }
-// done:
-//     SDL_GameControllerClose(controller);
-//     SDL_Quit();
-// }
 
 int hit_borders(const game *g, void *data, int direction_x, int direction_y)
 {
