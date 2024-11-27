@@ -234,15 +234,38 @@ void receive_other_player_data(const struct network_socket *data, player *other_
     }
 }
 
+// cppcheck-suppress constParameterPointer
+void send_local_player_data(const game *g, move_function_p move_func, const struct network_socket *data, player *local_player, struct sockaddr_storage *client_addr, const socklen_t *client_addr_len, int *err)
+{
+    int      original_x;
+    int      original_y;
+    ssize_t  bytes_sent;
+    uint32_t host_buffer[3];
+
+    original_x = (int)local_player->x;
+    original_y = (int)local_player->y;
+    move_func(g, local_player, err);
+    mvaddch(original_y, original_x, ' ');
+    mvaddch((int)local_player->y, (int)local_player->x, '*');
+    refresh();
+
+    host_buffer[0] = local_player->x;
+    host_buffer[1] = local_player->y;
+
+    bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)client_addr, *client_addr_len);
+    if(bytes_sent < 0 && errno != EWOULDBLOCK)
+    {
+        *err = errno;
+    }
+    refresh();
+}
+
 void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
     move_function_p move_func;
 
     struct sockaddr_storage client_addr;
     socklen_t               client_addr_len;
-
-    uint32_t host_buffer[3];
-    // uint32_t client_buffer[3];
 
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
@@ -259,34 +282,41 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
     set_move_function(g, &move_func);
 
     // Server loop
+    // TODO: implement way to deal w/ dropped packets
     while(terminate != 1)
     {
-        int original_x;
-        int original_y;
-        ssize_t bytes_sent;
+        // int original_x;
+        // int original_y;
+        // ssize_t bytes_sent;
         receive_other_player_data(data, other_player, &client_addr, &client_addr_len, err);
         if(*err != EWOULDBLOCK)
         {
             perror("Error while receiving data");
             break;
         }
-        original_x = (int)local_player->x;
-        original_y = (int)local_player->y;
-        move_func(g, local_player, err);
-        mvaddch(original_y, original_x, ' ');
-        mvaddch((int)local_player->y, (int)local_player->x, '*');
-        refresh();
-
-        host_buffer[0] = local_player->x;
-        host_buffer[1] = local_player->y;
-
-        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&client_addr, client_addr_len);
-        if(bytes_sent < 0 && errno != EWOULDBLOCK)
+        send_local_player_data(g, move_func, data, local_player, &client_addr, &client_addr_len, err);
+        if(*err != EWOULDBLOCK)
         {
-            perror("Error while receiving data.");
+            perror("Error while receiving data");
             break;
         }
-        refresh();
+        // original_x = (int)local_player->x;
+        // original_y = (int)local_player->y;
+        // move_func(g, local_player, err);
+        // mvaddch(original_y, original_x, ' ');
+        // mvaddch((int)local_player->y, (int)local_player->x, '*');
+        // refresh();
+
+        // host_buffer[0] = local_player->x;
+        // host_buffer[1] = local_player->y;
+
+        // bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&client_addr, client_addr_len);
+        // if(bytes_sent < 0 && errno != EWOULDBLOCK)
+        // {
+        //     perror("Error while receiving data.");
+        //     break;
+        // }
+        // refresh();
     }
 }
 
