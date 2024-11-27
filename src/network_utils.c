@@ -205,6 +205,35 @@ void setup_host_socket(struct network_socket *data, int *err)
     // TODO: use err for err handling (or remove it entirely)
 }
 
+void receive_other_player_data(const struct network_socket *data, player *other_player, struct sockaddr_storage *client_addr, socklen_t *client_addr_len, int *err)
+{
+    ssize_t  bytes_received;
+    uint32_t client_buffer[3];
+
+    bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)client_addr, client_addr_len);
+    // If data was received
+    if(bytes_received > 0)
+    {
+        int original_x;
+        int original_y;
+        // Set original positions
+        original_x = (int)other_player->x;
+        original_y = (int)other_player->y;
+        // Set other_player's coordinates to what was received
+        other_player->y = client_buffer[1];
+        other_player->x = client_buffer[0];
+        // Clear original positions
+        mvaddch(original_y, original_x, ' ');
+        // Move other_player on screen to the newly set positions
+        mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
+        refresh();
+    }
+    else
+    {
+        *err = errno;
+    }
+}
+
 void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
     move_function_p move_func;
@@ -213,8 +242,8 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
     socklen_t               client_addr_len;
 
     uint32_t host_buffer[3];
-    uint32_t client_buffer[3];
-    
+    // uint32_t client_buffer[3];
+
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
         perror("Error setting up signal handler");
@@ -232,32 +261,15 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
     // Server loop
     while(terminate != 1)
     {
-        int     original_x;
-        int     original_y;
-        ssize_t bytes_received;
+        int original_x;
+        int original_y;
         ssize_t bytes_sent;
-        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
-        // If data was received
-        if(bytes_received > 0)
+        receive_other_player_data(data, other_player, &client_addr, &client_addr_len, err);
+        if(*err != EWOULDBLOCK)
         {
-            // Set original positions
-            original_x = (int)other_player->x;
-            original_y = (int)other_player->y;
-            // Set other_player's coordinates to what was received
-            other_player->y = client_buffer[1];
-            other_player->x = client_buffer[0];
-            // Clear original positions
-            mvaddch(original_y, original_x, ' ');
-            // Move other_player on screen to the newly set positions
-            mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
-            refresh();
-        }
-        else if(errno != EWOULDBLOCK)    // If error occurred
-        {
-            perror("Error while receiving data.");
+            perror("Error while receiving data");
             break;
         }
-
         original_x = (int)local_player->x;
         original_y = (int)local_player->y;
         move_func(g, local_player, err);
