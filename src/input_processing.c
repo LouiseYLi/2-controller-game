@@ -6,6 +6,8 @@
 #include <ncurses.h>
 #include <stdio.h>
 
+#define sleep_time 250000000
+
 uint8_t *new_player_buffer(const player *p, int *err)
 {
     uint8_t *buffer = (uint8_t *)malloc(sizeof(p->id) + sizeof(p->x) + sizeof(p->y));
@@ -49,6 +51,10 @@ void set_move_function(const game *g, move_function_p *func)
     else if(g->input_type == 2)
     {
         *func = &process_controller_input;
+    }
+    else if(g->input_type == 3)
+    {
+        *func = &process_timer_input;
     }
 }
 
@@ -144,6 +150,55 @@ void process_controller_input(const game *g, player *p, int *err)
         p->y += direction_y;
 #pragma GCC diagnostic pop
         mvaddch((int)p->y, (int)p->x, '*');
+    }
+}
+
+void process_timer_input(const game *g, player *p, int *err)
+{
+    struct timespec req;
+    struct timespec rem;
+    int             direction;
+    int             direction_x = 0;
+    int             direction_y = 0;
+    req.tv_sec                  = 0;
+    req.tv_nsec                 = sleep_time;
+    nanosleep(&req, &rem);
+    // Seed the random number generator
+    // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp)
+    srand((unsigned int)time(NULL) * p->x * p->y);
+    direction = rand() % 4;
+    if(direction == 0)
+    {
+        direction_x = 0;
+        direction_y = -1;
+    }
+    if(direction == 1)
+    {
+        direction_x = -1;
+        direction_y = 0;
+    }
+    if(direction == 2)
+    {
+        direction_x = 0;
+        direction_y = 1;
+    }
+    if(direction == 3)
+    {
+        direction_x = 1;
+        direction_y = 0;
+    }
+    else
+    {
+        *err = -1;
+    }
+    if(!hit_borders(g, p, direction_x, direction_y))
+    {
+        // can actually move this to hit borders
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+        p->x += direction_x;
+        p->y += direction_y;
+#pragma GCC diagnostic pop
     }
 }
 
