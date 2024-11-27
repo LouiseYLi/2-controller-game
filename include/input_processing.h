@@ -1,30 +1,34 @@
 #ifndef GAME_INPUT_PROCESSING_H
 #define GAME_INPUT_PROCESSING_H
 
-#include "network_utils.h"
+#include "gui.h"
 #include <SDL2/SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct
-{
-    uint32_t x;
-    uint32_t y;
-    uint16_t direction;
-} player;
+// TODO: add sequence number/packet id to player struct for serializing
+//      receiving peer must parse and check packet id
 
-void new_player_buffer(uint8_t **buffer, int *err);
+typedef void (*move_function_p)(const game *g, player *p, int *err);
 
-void serialize_coordinate(uint32_t coordinate, uint8_t buffer[], long unsigned int *index);
+uint8_t *new_player_buffer(const player *p, int *err);
+
+void serialize_uint32_t(uint32_t value, uint8_t buffer[], long unsigned int *index);
 
 void serialize_direction(uint16_t direction, uint8_t buffer[], long unsigned int *index);
 
 void serialize_player(const player *p, uint8_t buffer[]);
 
-void process_input(const int *total_cols, const int *total_lines, void *data, int *err);
+void set_move_function(const game *g, move_function_p *func);
 
-void get_input(void *data, int *err);
+void process_keyboard_input(const game *g, player *p, int *err);
 
-int hit_borders(const int *total_cols, const int *total_lines, void *data, int direction_x, int direction_y);
+void process_controller_input(const game *g, player *p, int *err);
+
+void initialize_controller(const SDL_GameController *controller, int *err);
+
+// void get_input(void *data, int *err);
+
+int hit_borders(const game *g, void *data, int direction_x, int direction_y);
 
 #endif    // GAME_INPUT_PROCESSING_H

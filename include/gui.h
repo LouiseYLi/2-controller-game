@@ -1,21 +1,31 @@
 #ifndef GAME_GUI_H
 #define GAME_GUI_H
 
+#include <SDL2/SDL.h>
 #include <stdint.h>
 
-// Here I ignored the warning for terminate because I wanted
-//  terminate to act as a global flag for handling SIGINT.
-//  I couldn't think of an alternative to not using a
-//  non-constant global flag that also avoids compiler
-//  warnings.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-static int terminate = 0;
-#pragma GCC diagnostic pop
+typedef struct
+{
+    // cppcheck-suppress unusedStructMember
+    int input_type;
+    // cppcheck-suppress unusedStructMember
+    int width;
+    // cppcheck-suppress unusedStructMember
+    int height;
+    // cppcheck-suppress unusedStructMember
+    SDL_GameController *controller;
+} game;
 
-void handle_signal(int signal);
+typedef struct
+{
+    // cppcheck-suppress unusedStructMember
+    uint32_t id;
+    // cppcheck-suppress unusedStructMember
+    uint32_t x;
+    // cppcheck-suppress unusedStructMember
+    uint32_t y;
+} player;
 
-void gui(/*TODO: add this back void *data,*/ int *err);
+void initialize_gui(const game *g, const player *p, const player *p2);
 
 #endif    // GAME_GUI_H

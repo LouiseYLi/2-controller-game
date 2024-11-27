@@ -1,9 +1,22 @@
 #include "../include/network_utils.h"
+#include "../include/gui.h"
+#include <ncurses.h>
+#include <stdio.h>
 
 #define ERR_NONE 0
 #define ERR_NO_DIGITS 1
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
+
+// #define TEMPB 35
+
+void handle_signal(int signal)
+{
+    if(signal == SIGINT)
+    {
+        terminate = 1;
+    }
+}
 
 in_port_t convert_port(const char *str, int *err)
 {
@@ -46,42 +59,64 @@ done:
     return port;
 }
 
-void setup_network_address(struct sockaddr_storage *addr, socklen_t *addr_len, const char *address, in_port_t port, int *err)
+void convert_address(const char *address, struct sockaddr_storage *addr)
 {
-    in_port_t net_port;
-
-    *addr_len = 0;
-    net_port  = htons(port);
     memset(addr, 0, sizeof(*addr));
 
     if(inet_pton(AF_INET, address, &(((struct sockaddr_in *)addr)->sin_addr)) == 1)
     {
-        struct sockaddr_in *ipv4_addr;
-
-        ipv4_addr           = (struct sockaddr_in *)addr;
-        addr->ss_family     = AF_INET;
-        ipv4_addr->sin_port = net_port;
-        *addr_len           = sizeof(struct sockaddr_in);
+        addr->ss_family = AF_INET;
     }
     else if(inet_pton(AF_INET6, address, &(((struct sockaddr_in6 *)addr)->sin6_addr)) == 1)
     {
-        struct sockaddr_in6 *ipv6_addr;
-
-        ipv6_addr            = (struct sockaddr_in6 *)addr;
-        addr->ss_family      = AF_INET6;
-        ipv6_addr->sin6_port = net_port;
-        *addr_len            = sizeof(struct sockaddr_in6);
+        addr->ss_family = AF_INET6;
     }
     else
     {
         fprintf(stderr, "%s is not an IPv4 or an IPv6 address\n", address);
-        *err = errno;
+        exit(EXIT_FAILURE);
     }
+}
+
+void get_peer_address_to_host(struct sockaddr_storage *addr, in_port_t port)
+{
+    if(addr->ss_family == AF_INET)
+    {
+        struct sockaddr_in *ipv4_addr;
+
+        ipv4_addr             = (struct sockaddr_in *)addr;
+        ipv4_addr->sin_family = AF_INET;
+        ipv4_addr->sin_port   = htons(port);
+    }
+    else if(addr->ss_family == AF_INET6)
+    {
+        struct sockaddr_in6 *ipv6_addr;
+
+        ipv6_addr              = (struct sockaddr_in6 *)addr;
+        ipv6_addr->sin6_family = AF_INET6;
+        ipv6_addr->sin6_port   = htons(port);
+    }
+}
+
+int socket_create(int domain, int type, int protocol)
+{
+    int sockfd;
+
+    sockfd = socket(domain, type, protocol);
+
+    if(sockfd == -1)
+    {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    return sockfd;
 }
 
 void set_socket_flags(int socket_fd, int *err)
 {
     int flags;
+    int result;
     // Returns flags of socket
     flags = fcntl(socket_fd, F_GETFL, 0);
 
@@ -93,18 +128,7 @@ void set_socket_flags(int socket_fd, int *err)
     }
 
     // Sets non-blocking flag to socket
-    if(fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK))
-    {
-        close(socket_fd);
-        *err = errno;
-        return;
-    }
-}
-
-void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, int *err)
-{
-    int result = bind(socket_fd, (const struct sockaddr *)addr, addr_len);
-
+    result = fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK);
     if(result == -1)
     {
         close(socket_fd);
@@ -113,44 +137,140 @@ void bind_network_socket(int socket_fd, const void *addr, socklen_t addr_len, in
     }
 }
 
-int setup_network_socket(const char *address, in_port_t port, int *err)
+void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
+{
+    char      addr_str[INET6_ADDRSTRLEN];
+    socklen_t addr_len;
+    void     *vaddr;
+    in_port_t net_port;
+
+    net_port = htons(port);
+
+    if(addr->ss_family == AF_INET)
+    {
+        struct sockaddr_in *ipv4_addr;
+
+        ipv4_addr           = (struct sockaddr_in *)addr;
+        addr_len            = sizeof(*ipv4_addr);
+        ipv4_addr->sin_port = net_port;
+        vaddr               = (void *)&(((struct sockaddr_in *)addr)->sin_addr);
+    }
+    else if(addr->ss_family == AF_INET6)
+    {
+        struct sockaddr_in6 *ipv6_addr;
+
+        ipv6_addr            = (struct sockaddr_in6 *)addr;
+        addr_len             = sizeof(*ipv6_addr);
+        ipv6_addr->sin6_port = net_port;
+        vaddr                = (void *)&(((struct sockaddr_in6 *)addr)->sin6_addr);
+    }
+    else
+    {
+        fprintf(stderr, "Internal error: addr->ss_family must be AF_INET or AF_INET6, was: %d\n", addr->ss_family);
+        exit(EXIT_FAILURE);
+    }
+
+    if(inet_ntop(addr->ss_family, vaddr, addr_str, sizeof(addr_str)) == NULL)
+    {
+        perror("inet_ntop");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Binding to: %s:%u\n", addr_str, port);
+
+    if(bind(sockfd, (struct sockaddr *)addr, addr_len) == -1)
+    {
+        perror("Binding failed");
+        fprintf(stderr, "Error code: %d\n", errno);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Bound to socket: %s:%u\n", addr_str, port);
+    printf("testing!!!");
+}
+
+void setup_host_socket(struct network_socket *data, int *err)
 {
     struct sockaddr_storage addr;
-    socklen_t               addr_len;
-    int                     socket_fd;
-
-    // I dereferenced addr to get the address of it
-    setup_network_address(&addr, &addr_len, address, port, err);
-
+    // Convert host address
+    convert_address(data->src_ip, &addr);
+    data->socket_fd = socket_create(addr.ss_family, SOCK_DGRAM, 0);
+    set_socket_flags(data->socket_fd, err);
     if(*err != 0)
     {
-        socket_fd = -1;
-        goto done;
+        perror("Error setting socket flag to non-blocking.");
+        data->socket_fd = -1;
+        return;
     }
-    // ERROR HERE
-    socket_fd = socket(addr.ss_family, SOCK_DGRAM, 0);    // NOLINT(android-cloexec-socket)
+    socket_bind(data->socket_fd, &addr, data->port);
+    // TODO: use err for err handling (or remove it entirely)
+}
 
-    if(socket_fd == -1)
-    {
-        *err = errno;
-        goto done;
-    }
+void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
+{
+    move_function_p move_func;
 
-    set_socket_flags(socket_fd, err);
-    if(*err != 0)
-    {
-        socket_fd = -1;
-        goto done;
-    }
+    struct sockaddr_storage client_addr;
+    socklen_t               client_addr_len;
 
-    bind_network_socket(socket_fd, &addr, addr_len, err);
-    if(*err != 0)
+    uint32_t host_buffer[3];
+    uint32_t client_buffer[3];
+
+    // Convert peer address and set peer to host
+    convert_address(data->dest_ip, &client_addr);
+    get_peer_address_to_host(&client_addr, data->port);
+
+    client_addr_len = sizeof(client_addr);
+
+    set_move_function(g, &move_func);
+
+    // Server loop
+    while(terminate != 1)
     {
-        socket_fd = -1;
-        goto done;
+        int     original_x;
+        int     original_y;
+        ssize_t bytes_received;
+        ssize_t bytes_sent;
+        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
+        // If data was received
+        if(bytes_received > 0)
+        {
+            // Set original positions
+            original_x = (int)other_player->x;
+            original_y = (int)other_player->y;
+            // Set other_player's coordinates to what was received
+            other_player->y = client_buffer[1];
+            other_player->x = client_buffer[0];
+            // Clear original positions
+            mvaddch(original_y, original_x, ' ');
+            // Move other_player on screen to the newly set positions
+            mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
+            refresh();
+        }
+        else if(errno != EWOULDBLOCK)
+        {
+            perror("Error while receiving data.");
+            break;
+        }
+
+        original_x = (int)local_player->x;
+        original_y = (int)local_player->y;
+        move_func(g, local_player, err);
+        mvaddch(original_y, original_x, ' ');
+        mvaddch((int)local_player->y, (int)local_player->x, '*');
+        refresh();
+
+        host_buffer[0] = local_player->x;
+        host_buffer[1] = local_player->y;
+
+        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&client_addr, client_addr_len);
+        if(bytes_sent < 0 && errno != EWOULDBLOCK)
+        {
+            perror("Error while receiving data.");
+            break;
+        }
+        refresh();
     }
-done:
-    return socket_fd;
 }
 
 void close_socket(int socket_fd)
