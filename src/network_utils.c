@@ -277,6 +277,7 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         }
         refresh();
     }
+    endwin();
 }
 
 void close_socket(int socket_fd)
