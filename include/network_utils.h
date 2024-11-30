@@ -46,10 +46,6 @@ struct network_socket
     // cppcheck-suppress unusedStructMember
     char *dest_ip;
     // cppcheck-suppress unusedStructMember
-    struct sockaddr_in *src_ipv4_addr;
-    // cppcheck-suppress unusedStructMember
-    struct sockaddr_in *dest_ipv4_addr;
-    // cppcheck-suppress unusedStructMember
     in_port_t port;
     // cppcheck-suppress unusedStructMember
     int socket_fd;
