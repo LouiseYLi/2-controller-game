@@ -186,7 +186,6 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
     }
 
     printf("Bound to socket: %s:%u\n", addr_str, port);
-    printf("testing!!!");
 }
 
 void setup_host_socket(struct network_socket *data, int *err)
@@ -203,7 +202,6 @@ void setup_host_socket(struct network_socket *data, int *err)
         return;
     }
     socket_bind(data->socket_fd, &addr, data->port);
-    // TODO: use err for err handling (or remove it entirely)
 }
 
 void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
@@ -256,6 +254,7 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         else if(errno != EWOULDBLOCK)
         {
             perror("Error while receiving data.");
+            *err = errno;
             break;
         }
 
@@ -273,9 +272,11 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         if(bytes_sent < 0 && errno != EWOULDBLOCK)
         {
             perror("Error while receiving data.");
+            *err = errno;
             break;
         }
         refresh();
+        *err = 0;
     }
     endwin();
 }
