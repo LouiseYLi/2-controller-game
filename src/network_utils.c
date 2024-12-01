@@ -237,12 +237,17 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         // If data was received
         if(bytes_received > 0)
         {
+            if(client_buffer[2] <= data->current_seq_num)
+            {
+                continue;
+            }
             // Set original positions
             original_x = (int)other_player->x;
             original_y = (int)other_player->y;
             // Set other_player's coordinates to what was received
-            other_player->y = client_buffer[1];
-            other_player->x = client_buffer[0];
+            other_player->y       = client_buffer[1];
+            other_player->x       = client_buffer[0];
+            data->current_seq_num = client_buffer[2];
             // Clear original positions
             mvaddch(original_y, original_x, ' ');
             // Move other_player on screen to the newly set positions
@@ -259,12 +264,18 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         original_x = (int)local_player->x;
         original_y = (int)local_player->y;
         move_func(g, local_player, err);
+        if(original_x == (int)local_player->x && original_y == (int)local_player->y)
+        {
+            continue;
+        }
+        ++data->current_seq_num;
         mvaddch(original_y, original_x, ' ');
         mvaddch((int)local_player->y, (int)local_player->x, '*');
         refresh();
 
         host_buffer[0] = local_player->x;
         host_buffer[1] = local_player->y;
+        host_buffer[2] = data->current_seq_num;
 
         bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len);
         if(bytes_sent < 0 && errno != EWOULDBLOCK)

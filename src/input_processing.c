@@ -32,8 +32,6 @@ void serialize_uint32_t(uint32_t value, uint8_t buffer[], long unsigned int *ind
     *index += sizeof(value);
 }
 
-// TODO: Make sure coordinates are updated before serializing/pickling
-
 void serialize_player(const player *p, uint8_t buffer[])
 {
     long unsigned int index = 0;

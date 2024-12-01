@@ -76,9 +76,10 @@ int main(int argc, char *argv[])
     int       err      = 0;
     int       retval   = 0;
 
-    data.src_ip    = NULL;
-    data.dest_ip   = NULL;
-    data.socket_fd = 0;
+    data.src_ip          = NULL;
+    data.dest_ip         = NULL;
+    data.socket_fd       = 0;
+    data.current_seq_num = 0;
 
     if(MAX_ARGS != argc)
     {
