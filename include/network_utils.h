@@ -49,6 +49,12 @@ struct network_socket
     in_port_t port;
     // cppcheck-suppress unusedStructMember
     int socket_fd;
+    // cppcheck-suppress unusedStructMember
+    uint32_t current_seq_num;
+    // cppcheck-suppress unusedStructMember
+    struct sockaddr_storage peer_addr;
+    // cppcheck-suppress unusedStructMember
+    socklen_t peer_addr_len;
 };
 
 void handle_signal(int signal);
@@ -69,7 +75,7 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
 
 void setup_host_socket(struct network_socket *data, int *err);
 
-void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
+void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 
 void close_socket(int socket_fd);
 

@@ -1,4 +1,3 @@
-#include "../include/display.h"
 #include "../include/gui.h"
 #include "../include/input_processing.h"
 #include "../include/network_utils.h"
@@ -8,8 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define temp_coord 5
-#define temp_coord2 10
+#define P1_INITIAL_X 15
+#define P1_INITIAL_Y 8
+#define P2_INITIAL_X 35
+#define P2_INITIAL_Y 17
 
 // #define sleep_time 100000000
 
@@ -70,16 +71,13 @@ int main(int argc, char *argv[])
     const int height   = 25;
     const int width    = 50;
     game      g        = {0, height, width, NULL};
-    player    p        = {0, temp_coord, temp_coord};
-    player    p2       = {0, temp_coord2, temp_coord2};
+    player    p        = {0, P1_INITIAL_X, P1_INITIAL_Y};
+    player    p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
     int       err      = 0;
     int       retval   = 0;
 
-    // const char *PORT = "1532";
-
-    data.src_ip  = NULL;
-    data.dest_ip = NULL;
-    // data.port      = convert_port(PORT, &err);
+    data.src_ip    = NULL;
+    data.dest_ip   = NULL;
     data.socket_fd = 0;
 
     if(MAX_ARGS != argc)

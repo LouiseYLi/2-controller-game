@@ -204,12 +204,9 @@ void setup_host_socket(struct network_socket *data, int *err)
     socket_bind(data->socket_fd, &addr, data->port);
 }
 
-void handle_peer(const struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
+void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
     move_function_p move_func;
-
-    struct sockaddr_storage client_addr;
-    socklen_t               client_addr_len;
 
     uint32_t host_buffer[3];
     uint32_t client_buffer[3];
@@ -217,14 +214,15 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
         perror("Error setting up signal handler");
+        *err = -1;
         return;
     }
 
     // Convert peer address and set peer to host
-    convert_address(data->dest_ip, &client_addr);
-    get_peer_address_to_host(&client_addr, data->port);
+    convert_address(data->dest_ip, &data->peer_addr);
+    get_peer_address_to_host(&data->peer_addr, data->port);
 
-    client_addr_len = sizeof(client_addr);
+    data->peer_addr_len = sizeof(data->peer_addr);
 
     set_move_function(g, &move_func);
 
@@ -235,7 +233,7 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         int     original_y;
         ssize_t bytes_received;
         ssize_t bytes_sent;
-        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
+        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&data->peer_addr, &data->peer_addr_len);
         // If data was received
         if(bytes_received > 0)
         {
@@ -268,7 +266,7 @@ void handle_peer(const struct network_socket *data, const game *g, player *local
         host_buffer[0] = local_player->x;
         host_buffer[1] = local_player->y;
 
-        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&client_addr, client_addr_len);
+        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len);
         if(bytes_sent < 0 && errno != EWOULDBLOCK)
         {
             perror("Error while receiving data.");
