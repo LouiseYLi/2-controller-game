@@ -1,15 +1,6 @@
 #include "../include/gui.h"
-// #include "../include/input_processing.h"
 #include <ncurses.h>
 #include <signal.h>
-
-// void handle_signal(int signal)
-// {
-//     if(signal == SIGINT)
-//     {
-//         terminate = 1;
-//     }
-// }
 
 void initialize_gui(const game *g, const player *p, const player *p2)
 {
