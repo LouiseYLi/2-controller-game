@@ -2,9 +2,11 @@
 #include <ncurses.h>
 #include <signal.h>
 
-void initialize_gui(const game *g, const player *p, const player *p2)
+void initialize_gui(game *g, const player *p, const player *p2)
 {
     WINDOW *gui_window;
+
+    g->input_type = display_menu();
 
     initscr();
     noecho();

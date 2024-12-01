@@ -1,5 +1,6 @@
 #include "../include/gui.h"
 #include "../include/input_processing.h"
+#include "../include/menu.h"
 #include "../include/network_utils.h"
 #include <SDL2/SDL.h>
 #include <errno.h>
@@ -66,10 +67,9 @@ static void parse_arguments(int argc, char *argv[], void *arg, game *g, int *err
 int main(int argc, char *argv[])
 {
     struct network_socket data;
-    // Temp default values for window and players
     const int MAX_ARGS = 9;
-    const int height   = 25;
-    const int width    = 50;
+    const int height   = 20;
+    const int width    = 60;
     game      g        = {0, height, width, NULL};
     player    p        = {0, P1_INITIAL_X, P1_INITIAL_Y};
     player    p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
