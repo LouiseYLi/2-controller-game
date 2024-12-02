@@ -7,6 +7,7 @@
 #define ERR_NO_DIGITS 1
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
+#define DISCONNECT_CODE 1000
 
 // #define TEMPB 35
 
@@ -237,7 +238,12 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         // If data was received
         if(bytes_received > 0)
         {
-            if(client_buffer[2] <= data->current_seq_num)
+            if(client_buffer[0] == (uint32_t)DISCONNECT_CODE && client_buffer[1] == (uint32_t)DISCONNECT_CODE)
+            {
+                terminate = 1;
+                printf("Received disconnect message from peer\n");
+            }
+            else if(client_buffer[2] <= data->current_seq_num)
             {
                 continue;
             }
@@ -280,12 +286,23 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len);
         if(bytes_sent < 0 && errno != EWOULDBLOCK)
         {
-            perror("Error while receiving data.");
+            perror("Error while sending data.");
             *err = errno;
             break;
         }
         refresh();
         *err = 0;
+    }
+    if(terminate == 1)
+    {
+        // Sends a disconnect message to the other player
+        uint32_t disconnect_message[3] = {DISCONNECT_CODE, DISCONNECT_CODE, data->current_seq_num};
+        if(sendto(data->socket_fd, disconnect_message, sizeof(disconnect_message), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len) == -1)
+        {
+            perror("Error sending disconnect code");
+            *err = errno;
+        }
+        printf("Sent disconnect message to peer\n");
     }
     endwin();
 }

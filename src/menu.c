@@ -79,6 +79,5 @@ int display_menu(void)
     wborder(menuWin, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wrefresh(menuWin);
     delwin(menuWin);
-    printf("highlighted: %d", highlight);
     return (highlight + 1);
 }

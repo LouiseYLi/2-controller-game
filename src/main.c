@@ -67,14 +67,14 @@ static void parse_arguments(int argc, char *argv[], void *arg, game *g, int *err
 int main(int argc, char *argv[])
 {
     struct network_socket data;
-    const int MAX_ARGS = 9;
-    const int height   = 20;
-    const int width    = 60;
-    game      g        = {0, height, width, NULL};
-    player    p        = {0, P1_INITIAL_X, P1_INITIAL_Y};
-    player    p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
-    int       err      = 0;
-    int       retval   = 0;
+    const int             MAX_ARGS = 9;
+    const int             height   = 20;
+    const int             width    = 60;
+    game                  g        = {0, height, width, NULL};
+    player                p        = {0, P1_INITIAL_X, P1_INITIAL_Y};
+    player                p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
+    int                   err      = 0;
+    int                   retval   = 0;
 
     data.src_ip          = NULL;
     data.dest_ip         = NULL;
@@ -114,19 +114,16 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    printf("socket fd %d", data.socket_fd);
-
     initialize_gui(&g, &p, &p2);
     handle_peer(&data, &g, &p, &p2, &err);
     // cppcheck-suppress knownConditionTrueFalse
-    if(err != 0)
+    if(err != 0 && errno != EINTR)
     {
         perror("Error in handle_peer.");
         retval = EXIT_FAILURE;
         goto done;
     }
 
-    // cleanup:
 done:
     if(data.socket_fd != 0 && data.socket_fd != -1)
     {
