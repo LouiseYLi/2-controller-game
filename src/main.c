@@ -19,29 +19,14 @@
 // TODO: implement "other" peer
 // TODO: Implement sockets for peer
 
-static void parse_arguments(int argc, char *argv[], void *arg, game *g, int *err)
+static void parse_arguments(int argc, char *argv[], void *arg, int *err)
 {
-    const int              base = 10;
-    char                  *endptr;
     int                    option;
     struct network_socket *data = (struct network_socket *)arg;
     while((option = getopt(argc, argv, "i:s:d:p:")) != -1)
     {
         switch(option)
         {
-            case 'i':
-                g->input_type = (int)strtol(optarg, &endptr, base);
-                if(endptr == optarg)
-                {
-                    // No conversion was performed
-                    perror("Error invalid input type. Input type must be 1 for keyboard, 2 for controller, 3 for timer.");
-                }
-                else if(*endptr != '\0')
-                {
-                    // Conversion stopped at a non-digit character
-                    perror("Error: Invalid characters found");
-                }
-                break;
             case 's':
                 data->src_ip = optarg;
                 break;
@@ -67,7 +52,7 @@ static void parse_arguments(int argc, char *argv[], void *arg, game *g, int *err
 int main(int argc, char *argv[])
 {
     struct network_socket data;
-    const int             MAX_ARGS = 9;
+    const int             MAX_ARGS = 7;
     const int             height   = 20;
     const int             width    = 60;
     game                  g        = {0, height, width, NULL};
@@ -88,12 +73,22 @@ int main(int argc, char *argv[])
         return retval;
     }
 
-    parse_arguments(argc, argv, &data, &g, &err);
+    parse_arguments(argc, argv, &data, &err);
     if(err != 0)
     {
         retval = EXIT_FAILURE;
         goto done;
     }
+
+    setup_host_socket(&data, &err);
+    if(err != 0)
+    {
+        perror("Error creating socket.");
+        retval = EXIT_FAILURE;
+        goto done;
+    }
+
+    initialize_gui(&g, &p, &p2);
 
     // 1 for keyb, 2 for contr, 3 for timer
     if(g.input_type == 2)
@@ -106,17 +101,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    setup_host_socket(&data, &err);
-    if(err != 0)
-    {
-        perror("Error creating socket.");
-        retval = EXIT_FAILURE;
-        goto done;
-    }
-
-    initialize_gui(&g, &p, &p2);
     handle_peer(&data, &g, &p, &p2, &err);
-    // cppcheck-suppress knownConditionTrueFalse
     if(err != 0 && errno != EINTR)
     {
         perror("Error in handle_peer.");
