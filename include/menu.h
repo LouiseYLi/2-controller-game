@@ -4,7 +4,20 @@
 #ifndef NCURSESGAME_MENU_H
 #define NCURSESGAME_MENU_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#ifdef clang
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
+    #pragma clang diagnostic ignored "-Wreserved-identifier"
+    #pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+#endif
 #include <SDL2/SDL.h>
+#pragma GCC diagnostic pop
+#ifdef clang
+    #pragma clang diagnostic pop
+#endif
+
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <ncurses.h>

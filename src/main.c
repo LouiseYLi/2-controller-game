@@ -2,7 +2,6 @@
 #include "../include/input_processing.h"
 #include "../include/menu.h"
 #include "../include/network_utils.h"
-#include <SDL2/SDL.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -110,9 +109,6 @@ int main(int argc, char *argv[])
     }
 
 done:
-    if(data.socket_fd != 0 && data.socket_fd != -1)
-    {
-        close_socket(data.socket_fd);
-    }
+    close_socket(data.socket_fd);
     return retval;
 }

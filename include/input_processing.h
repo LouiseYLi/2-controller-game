@@ -2,7 +2,6 @@
 #define GAME_INPUT_PROCESSING_H
 
 #include "gui.h"
-#include <SDL2/SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 
