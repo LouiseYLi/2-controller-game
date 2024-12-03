@@ -6,7 +6,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-default"
-#ifdef clang
+#ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
     #pragma clang diagnostic ignored "-Wreserved-identifier"
@@ -14,7 +14,7 @@
 #endif
 #include <SDL2/SDL.h>
 #pragma GCC diagnostic pop
-#ifdef clang
+#ifdef __clang__
     #pragma clang diagnostic pop
 #endif
 
