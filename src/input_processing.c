@@ -6,7 +6,7 @@
 #include <ncurses.h>
 #include <stdio.h>
 
-#define sleep_time 250000000
+#define sleep_time 150000000
 
 uint8_t *new_player_buffer(const player *p, int *err)
 {
@@ -155,9 +155,7 @@ void process_timer_input(const game *g, player *p, int *err)
 {
     struct timespec req;
     struct timespec rem;
-    int             direction;
-    int             direction_x = 0;
-    int             direction_y = 0;
+    int           direction;
     req.tv_sec                  = 0;
     req.tv_nsec                 = sleep_time;
     nanosleep(&req, &rem);
@@ -165,39 +163,37 @@ void process_timer_input(const game *g, player *p, int *err)
     // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp)
     srand((unsigned int)time(NULL) * p->x * p->y);
     direction = rand() % 4;
-    if(direction == 0)
-    {
-        direction_x = 0;
-        direction_y = -1;
+
+    switch (direction) {
+        case 0:
+            p->y-=1;
+        if(p->y < 2) {
+            p->y = 2;
+        }
+        break;
+        case 1:
+            p->x-=1;
+        if(p->x < 2) {
+            p->x = 2;
+        }
+        break;
+        case 2:
+            p->x+=1;
+        if(p->x > (uint32_t)g->width - 1) {
+            p->x = (uint32_t)g->width - 1;
+        }
+        break;
+        case 3:
+            p->y+=1;
+        if(p->y > (uint32_t)g->height - 1) {
+            p->y = (uint32_t)g->height - 1;
+        }
+        break;
+        default:
+            *err = -1;
+            break;
     }
-    if(direction == 1)
-    {
-        direction_x = -1;
-        direction_y = 0;
-    }
-    if(direction == 2)
-    {
-        direction_x = 0;
-        direction_y = 1;
-    }
-    if(direction == 3)
-    {
-        direction_x = 1;
-        direction_y = 0;
-    }
-    else
-    {
-        *err = -1;
-    }
-    if(!hit_borders(g, p, direction_x, direction_y))
-    {
-        // can actually move this to hit borders
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-        p->x += direction_x;
-        p->y += direction_y;
-#pragma GCC diagnostic pop
-    }
+
 }
 
 void initialize_controller(const SDL_GameController *controller, int *err)

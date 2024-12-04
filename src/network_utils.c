@@ -138,12 +138,13 @@ void set_socket_flags(int socket_fd, int *err)
     }
 }
 
-void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
+int socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
 {
     char      addr_str[INET6_ADDRSTRLEN];
     socklen_t addr_len;
     void     *vaddr;
     in_port_t net_port;
+    int bind_res;
 
     net_port = htons(port);
 
@@ -167,30 +168,38 @@ void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port)
     }
     else
     {
+        close(sockfd);
         fprintf(stderr, "Internal error: addr->ss_family must be AF_INET or AF_INET6, was: %d\n", addr->ss_family);
         exit(EXIT_FAILURE);
     }
 
     if(inet_ntop(addr->ss_family, vaddr, addr_str, sizeof(addr_str)) == NULL)
     {
+        close(sockfd);
         perror("inet_ntop");
         exit(EXIT_FAILURE);
     }
 
     printf("Binding to: %s:%u\n", addr_str, port);
 
-    if(bind(sockfd, (struct sockaddr *)addr, addr_len) == -1)
+    bind_res = bind(sockfd, (struct sockaddr *)addr, addr_len);
+
+    if(bind_res == -1)
     {
+        close(sockfd);
         perror("Binding failed");
         fprintf(stderr, "Error code: %d\n", errno);
         exit(EXIT_FAILURE);
     }
 
     printf("Bound to socket: %s:%u\n", addr_str, port);
+
+    return sockfd;
 }
 
-void setup_host_socket(struct network_socket *data, int *err)
+int setup_host_socket(struct network_socket *data, int *err)
 {
+    int bind_res;
     struct sockaddr_storage addr;
     // Convert host address
     convert_address(data->src_ip, &addr);
@@ -200,9 +209,18 @@ void setup_host_socket(struct network_socket *data, int *err)
     {
         perror("Error setting socket flag to non-blocking.");
         data->socket_fd = -1;
-        return;
+        return -1;
     }
-    socket_bind(data->socket_fd, &addr, data->port);
+    bind_res = socket_bind(data->socket_fd, &addr, data->port);
+    if(bind_res == -1)
+    {
+        perror("Error binding socket.");
+        close(data->socket_fd);
+        data->socket_fd = -1;
+        return -1;
+    }
+
+    return bind_res;
 }
 
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
@@ -241,6 +259,7 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
             if(client_buffer[0] == (uint32_t)DISCONNECT_CODE && client_buffer[1] == (uint32_t)DISCONNECT_CODE)
             {
                 terminate = 1;
+                close(data->socket_fd);
                 printf("Received disconnect message from peer\n");
             }
             else if(client_buffer[2] <= data->current_seq_num)
@@ -299,6 +318,7 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
         uint32_t disconnect_message[3] = {DISCONNECT_CODE, DISCONNECT_CODE, data->current_seq_num};
         if(sendto(data->socket_fd, disconnect_message, sizeof(disconnect_message), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len) == -1)
         {
+            close(data->socket_fd);
             perror("Error sending disconnect code");
             *err = errno;
         }

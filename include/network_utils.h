@@ -71,9 +71,9 @@ struct sockaddr_in *setup_network_address(struct sockaddr_in *addr, socklen_t *a
 
 void set_socket_flags(int socket_fd, int *err);
 
-void socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
+int socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
 
-void setup_host_socket(struct network_socket *data, int *err);
+int setup_host_socket(struct network_socket *data, int *err);
 
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 

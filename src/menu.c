@@ -1,4 +1,5 @@
-#include "menu.h"
+#include "../include/menu.h"
+#include <ncurses.h>
 
 void print_menu_options(WINDOW *menuWin, const int *highlight, const char **choices)
 {

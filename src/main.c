@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     player                p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
     int                   err      = 0;
     int                   retval   = 0;
+    int setup_socket_res;
 
     data.src_ip          = NULL;
     data.dest_ip         = NULL;
@@ -79,7 +80,14 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    setup_host_socket(&data, &err);
+    setup_socket_res = setup_host_socket(&data, &err);
+    if(setup_socket_res == -1)
+    {
+        perror("Error setting up socket.");
+        retval = EXIT_FAILURE;
+        goto done;
+    }
+    
     if(err != 0)
     {
         perror("Error creating socket.");
@@ -103,12 +111,11 @@ int main(int argc, char *argv[])
     handle_peer(&data, &g, &p, &p2, &err);
     if(err != 0 && errno != EINTR)
     {
-        perror("Error in handle_peer.");
         retval = EXIT_FAILURE;
         goto done;
     }
 
 done:
-    close_socket(data.socket_fd);
+    close(data.socket_fd);
     return retval;
 }

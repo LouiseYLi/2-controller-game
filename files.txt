@@ -1,1 +1,1 @@
-main src/main.c src/input_processing.c src/gui.c src/network_utils.c src/menu.c include/input_processing.h include/gui.h include/network_utils.h include/menu.h ncurses SDL2
+main src/main.c src/input_processing.c src/gui.c src/network_utils.c src/menu.c include/input_processing.h include/gui.h include/menu.h include/network_utils.h ncurses SDL2
