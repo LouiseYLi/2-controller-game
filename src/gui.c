@@ -2,7 +2,7 @@
 #include <ncurses.h>
 #include <signal.h>
 
-void initialize_gui(game *g, const player *p, const player *p2)
+void initialize_gui(game *g)
 {
     WINDOW *gui_window;
 
@@ -19,8 +19,8 @@ void initialize_gui(game *g, const player *p, const player *p2)
     box(gui_window, 0, 0);
     wrefresh(gui_window);
 
-    mvaddch((int)p->y, (int)p->x, '*');
-    mvaddch((int)p2->y, (int)p2->x, '*');
+    // mvaddch((int)p->y, (int)p->x, '*');
+    // mvaddch((int)p2->y, (int)p2->x, '*');
 
     // TODO: add "other" peer player dot
     refresh();

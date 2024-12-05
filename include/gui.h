@@ -30,6 +30,6 @@ typedef struct
     uint32_t prev_y;
 } player;
 
-void initialize_gui(game *g, const player *p, const player *p2);
+void initialize_gui(game *g);
 
 #endif    // GAME_GUI_H

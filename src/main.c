@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-    initialize_gui(&g, &p, &p2);
+    initialize_gui(&g);
 
     // 1 for keyb, 2 for contr, 3 for timer
     if(g.input_type == 2)
