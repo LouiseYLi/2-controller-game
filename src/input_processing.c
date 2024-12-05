@@ -6,7 +6,7 @@
 #include <ncurses.h>
 #include <stdio.h>
 
-#define sleep_time 150000000
+#define sleep_time 750000000
 
 uint8_t *new_player_buffer(const player *p, int *err)
 {
@@ -56,98 +56,94 @@ void set_move_function(const game *g, move_function_p *func)
     }
 }
 
+void clamp_position(player *p, const game *g)
+{
+    if (p->x < 2) {
+        p->x = 2;
+    } else if (p->x >= (uint32_t)g->height) {
+        p->x = (uint32_t)g->height - 1;
+    }
+
+    if (p->y < 2) {
+        p->y = 2;
+    } else if (p->y >= (uint32_t)g->width) {
+        p->y = (uint32_t)g->width - 1;
+    }
+}
+
 void process_keyboard_input(const game *g, player *p, int *err)
 {
-    int direction;
-    int direction_x = 0;
-    int direction_y = 0;
+    int c = getch();
 
-    nodelay(stdscr, TRUE);
-    // TODO: remove direction from struct
-    direction = getch();
-    refresh();
+    // if (c == ERR) {
+    //     return;
+    // }
 
-    if(direction == 'w')
-    {
-        direction_x = 0;
-        direction_y = -1;
+    switch (c) {
+        case 'w':
+            p->y -= 1;
+            break;
+        case 'a':
+            p->x -= 1;
+            break;
+        case 'd':
+            p->x += 1;
+            break;
+        case 's':
+            p->y += 1;
+            break;
+        default:
+            *err = -1;
+            return;
     }
-    if(direction == 'a')
-    {
-        direction_x = -1;
-        direction_y = 0;
-    }
-    if(direction == 's')
-    {
-        direction_x = 0;
-        direction_y = 1;
-    }
-    if(direction == 'd')
-    {
-        direction_x = 1;
-        direction_y = 0;
-    }
-    else
-    {
-        *err = -1;
-    }
-    if(!hit_borders(g, p, direction_x, direction_y))
-    {
-        // can actually move this to hit borders
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-        p->x += direction_x;
-        p->y += direction_y;
-#pragma GCC diagnostic pop
-    }
+
+    clamp_position(p, g);
 }
 
 void process_controller_input(const game *g, player *p, int *err)
 {
     SDL_Event event;
     int       direction;
-    int       direction_x = 0;
-    int       direction_y = 0;
     while(SDL_PollEvent(&event))
     {
         if(event.type == SDL_CONTROLLERBUTTONDOWN)
         {
-            mvaddch((int)p->y, (int)p->x, ' ');
+            // mvaddch((int)p->y, (int)p->x, ' ');
             direction = event.cbutton.button;
             if(direction == SDL_CONTROLLER_BUTTON_DPAD_UP)
             {
-                direction_x = 0;
-                direction_y = -1;
+            p->y-=1;
+            if(p->y < 2) {
+                p->y = 2;
             }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
-            {
-                direction_x = 0;
-                direction_y = 1;
-            }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
-            {
-                direction_x = -1;
-                direction_y = 0;
-            }
-            else if(direction == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
-            {
-                direction_x = 1;
-                direction_y = 0;
-            }
-            else
-            {
-                *err = -1;
-            }
+        break;
         }
-    }
-    if(!hit_borders(g, p, direction_x, direction_y))
-    {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-        p->x += direction_x;
-        p->y += direction_y;
-#pragma GCC diagnostic pop
-        mvaddch((int)p->y, (int)p->x, '*');
+        if(direction == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+        {
+            p->x-=1;
+            if(p->x < 2) {
+            p->x = 2;
+        }
+        break;
+        }
+        if(direction == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+        {
+            p->x +=1;
+            if(p->x > (uint32_t)g->height - 1) {
+            p->x = (uint32_t)g->height - 1;
+        }
+        break;
+        }
+        if(direction == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+        {
+            p->y +=1;
+            if(p->y > (uint32_t)g->width - 1) {
+            p->y = (uint32_t)g->width - 1;
+        }
+        break;
+        }
+            *err = -1;
+        }
     }
 }
 
@@ -155,13 +151,13 @@ void process_timer_input(const game *g, player *p, int *err)
 {
     struct timespec req;
     struct timespec rem;
-    int           direction;
+    int  direction;
     req.tv_sec                  = 0;
     req.tv_nsec                 = sleep_time;
     nanosleep(&req, &rem);
     // Seed the random number generator
     // NOLINTNEXTLINE(cert-msc32-c,cert-msc51-cpp)
-    srand((unsigned int)time(NULL) * p->x * p->y);
+    // srand((unsigned int)time(NULL) * p->x * p->y);
     direction = rand() % 4;
 
     switch (direction) {
@@ -179,14 +175,14 @@ void process_timer_input(const game *g, player *p, int *err)
         break;
         case 2:
             p->x+=1;
-        if(p->x > (uint32_t)g->width - 1) {
-            p->x = (uint32_t)g->width - 1;
+        if(p->x > (uint32_t)g->height - 1) {
+            p->x = (uint32_t)g->height - 1;
         }
         break;
         case 3:
             p->y+=1;
-        if(p->y > (uint32_t)g->height - 1) {
-            p->y = (uint32_t)g->height - 1;
+        if(p->y > (uint32_t)g->width - 1) {
+            p->y = (uint32_t)g->width - 1;
         }
         break;
         default:

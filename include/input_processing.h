@@ -30,6 +30,8 @@ void initialize_controller(const SDL_GameController *controller, int *err);
 
 // void get_input(void *data, int *err);
 
+void clamp_position(player *p, const game *g);
+
 int hit_borders(const game *g, void *data, int direction_x, int direction_y);
 
 #endif    // GAME_INPUT_PROCESSING_H

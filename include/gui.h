@@ -24,6 +24,10 @@ typedef struct
     uint32_t x;
     // cppcheck-suppress unusedStructMember
     uint32_t y;
+    // cppcheck-suppress unusedStructMember
+    uint32_t prev_x;
+    // cppcheck-suppress unusedStructMember
+    uint32_t prev_y;
 } player;
 
 void initialize_gui(game *g, const player *p, const player *p2);

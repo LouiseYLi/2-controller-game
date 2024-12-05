@@ -11,6 +11,7 @@ void initialize_gui(game *g, const player *p, const player *p2)
     initscr();
     noecho();
     curs_set(0);
+    timeout(0);
 
     gui_window = newwin(g->width, g->height, 1, 1);
     keypad(gui_window, TRUE);

@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "network_utils.h": "c"
+        "network_utils.h": "c",
+        "shared_mutex": "c",
+        "mutex": "c"
     }
 }

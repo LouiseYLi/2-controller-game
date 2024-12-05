@@ -8,8 +8,19 @@
 #define ERR_OUT_OF_RANGE 2
 #define ERR_INVALID_CHARS 3
 #define DISCONNECT_CODE 1000
+#define PACKET_SIZE 5
+
+#define sleep_time 20000000
+#define recv_sleep_time 10000000
 
 // #define TEMPB 35
+
+
+pthread_mutex_t* get_player_lock(void) {
+    static pthread_mutex_t player_lock = PTHREAD_MUTEX_INITIALIZER;
+    return &player_lock;
+}
+
 
 void handle_signal(int signal)
 {
@@ -223,12 +234,21 @@ int setup_host_socket(struct network_socket *data, int *err)
     return bind_res;
 }
 
+struct thread_data
+{
+    struct network_socket *data;
+    const game           *g;
+    player               *local_player;
+    player               *other_player;
+    int                  *err;
+};
+
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err)
 {
-    move_function_p move_func;
-
-    uint32_t host_buffer[3];
-    uint32_t client_buffer[3];
+    struct thread_data *t_data;
+    pthread_t ptid;
+    pthread_t stid;
+    
 
     if(signal(SIGINT, handle_signal) == SIG_ERR)
     {
@@ -243,88 +263,156 @@ void handle_peer(struct network_socket *data, const game *g, player *local_playe
 
     data->peer_addr_len = sizeof(data->peer_addr);
 
-    set_move_function(g, &move_func);
+    t_data = (struct thread_data *)malloc(sizeof(struct thread_data));
+    
+
+    if(t_data == NULL) {
+        perror("Error allocating memory for thread data.");
+        *err = errno;
+        return;
+    }
+        t_data->data         = data;
+        t_data->g            = g;
+        t_data->local_player = local_player;
+        t_data->other_player = other_player;
+        t_data->err          = err;
+
+    if (pthread_create(&ptid, NULL, receive_thread_func, t_data) != 0) {
+        perror("Error creating thread");
+        free(t_data);
+        *err = errno;
+        return;
+    }
+
+    if (pthread_create(&stid, NULL, send_thread_func, t_data) != 0) {
+        perror("Error creating thread");
+        free(t_data);
+        *err = errno;
+        return;
+    }
 
     // Server loop
     while(terminate != 1)
     {
-        int     original_x;
-        int     original_y;
+        mvaddch((int)other_player->prev_y, (int)other_player->prev_x, ' ');
+        mvaddch((int)other_player->y, (int)other_player->x, '*');
+        mvaddch((int)local_player->prev_y, (int)local_player->prev_x, ' ');
+        mvaddch((int)local_player->y, (int)local_player->x, '*');
+        refresh();
+    }
+    pthread_join(ptid, NULL);
+    pthread_join(stid, NULL);
+    free(t_data);
+    endwin();
+}
+
+void *send_thread_func(void *arg) 
+{
+    struct thread_data *data = (struct thread_data *)arg;
+    uint32_t host_buffer[PACKET_SIZE];
+    struct timespec req;
+    struct timespec rem;
+    uint32_t disconnect_message[3];
+    move_function_p move_func;
+    req.tv_sec                  = 0;
+    req.tv_nsec                 = sleep_time;
+
+    set_move_function(data->g, &move_func);
+    if(move_func == NULL)
+    {
+        perror("Error setting move function");
+        *data->err = -1;
+        return NULL;
+    }
+
+    while(terminate != 1) 
+    {
+
+        nanosleep(&req, &rem);
+
+        data->local_player->prev_x = data->local_player->x;
+        data->local_player->prev_y = data->local_player->y;
+    
+        move_func(data->g, data->local_player, data->err);
+        if(data->local_player->prev_x != data->local_player->x || data->local_player->prev_y != data->local_player->y)
+        {
+            ssize_t bytes_sent;
+            // ++data->data->current_seq_num;
+            host_buffer[0] = data->local_player->x;
+            host_buffer[1] = data->local_player->y;
+            host_buffer[2] = data->data->current_seq_num;
+            host_buffer[3] = data->local_player->prev_x;
+            host_buffer[4] = data->local_player->prev_y;
+
+            bytes_sent = sendto(data->data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&data->data->peer_addr, data->data->peer_addr_len);
+            if(bytes_sent < 0 && errno != EWOULDBLOCK)
+            {
+                perror("Error while sending data.");
+                *data->err = errno;
+            }
+        }
+    }
+
+        disconnect_message[0] = DISCONNECT_CODE;
+        disconnect_message[1] = DISCONNECT_CODE;
+        disconnect_message[2] = data->data->current_seq_num;
+        if(sendto(data->data->socket_fd, disconnect_message, sizeof(disconnect_message), 0, (struct sockaddr *)&data->data->peer_addr, data->data->peer_addr_len) == -1)
+        {
+            perror("Error sending disconnect code");
+            *data->err = errno;
+        }
+        printf("Sent disconnect message to peer\n");
+    
+
+    return NULL;
+}
+
+void *receive_thread_func(void *arg)
+{
+    struct thread_data *data = (struct thread_data *)arg;
+    uint32_t client_buffer[PACKET_SIZE];
+    struct timespec req;
+    struct timespec rem;
+    req.tv_sec                  = 0;
+    req.tv_nsec                 = recv_sleep_time;
+    while(terminate != 1) {
         ssize_t bytes_received;
-        ssize_t bytes_sent;
-        bytes_received = recvfrom(data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&data->peer_addr, &data->peer_addr_len);
-        // If data was received
+
+        nanosleep(&req, &rem);
+        data->other_player->prev_x = data->other_player->x;
+        data->other_player->prev_y = data->other_player->y;
+
+        bytes_received = recvfrom(data->data->socket_fd, client_buffer, sizeof(client_buffer), 0, (struct sockaddr *)&data->data->peer_addr, &data->data->peer_addr_len);
         if(bytes_received > 0)
         {
             if(client_buffer[0] == (uint32_t)DISCONNECT_CODE && client_buffer[1] == (uint32_t)DISCONNECT_CODE)
             {
                 terminate = 1;
-                close(data->socket_fd);
+                close(data->data->socket_fd);
                 printf("Received disconnect message from peer\n");
             }
-            else if(client_buffer[2] <= data->current_seq_num)
-            {
-                continue;
-            }
-            // Set original positions
-            original_x = (int)other_player->x;
-            original_y = (int)other_player->y;
-            // Set other_player's coordinates to what was received
-            other_player->y       = client_buffer[1];
-            other_player->x       = client_buffer[0];
-            data->current_seq_num = client_buffer[2];
-            // Clear original positions
-            mvaddch(original_y, original_x, ' ');
-            // Move other_player on screen to the newly set positions
-            mvaddch((int)client_buffer[1], (int)client_buffer[0], '*');
-            refresh();
+
+            // if(client_buffer[2] <= data->data->current_seq_num)
+            // {
+            
+            //     continue;
+            // }
+
+            data->other_player->y       = client_buffer[1];
+            data->other_player->x       = client_buffer[0];
+            data->data->current_seq_num = client_buffer[2];
+            data->other_player->prev_x  = client_buffer[3];
+            data->other_player->prev_y  = client_buffer[4];
+            
         }
         else if(errno != EWOULDBLOCK)
         {
             perror("Error while receiving data.");
-            *err = errno;
-            break;
+            data->err = &errno;
         }
-
-        original_x = (int)local_player->x;
-        original_y = (int)local_player->y;
-        move_func(g, local_player, err);
-        if(original_x == (int)local_player->x && original_y == (int)local_player->y)
-        {
-            continue;
-        }
-        ++data->current_seq_num;
-        mvaddch(original_y, original_x, ' ');
-        mvaddch((int)local_player->y, (int)local_player->x, '*');
-        refresh();
-
-        host_buffer[0] = local_player->x;
-        host_buffer[1] = local_player->y;
-        host_buffer[2] = data->current_seq_num;
-
-        bytes_sent = sendto(data->socket_fd, host_buffer, sizeof(host_buffer), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len);
-        if(bytes_sent < 0 && errno != EWOULDBLOCK)
-        {
-            perror("Error while sending data.");
-            *err = errno;
-            break;
-        }
-        refresh();
-        *err = 0;
     }
-    if(terminate == 1)
-    {
-        // Sends a disconnect message to the other player
-        uint32_t disconnect_message[3] = {DISCONNECT_CODE, DISCONNECT_CODE, data->current_seq_num};
-        if(sendto(data->socket_fd, disconnect_message, sizeof(disconnect_message), 0, (struct sockaddr *)&data->peer_addr, data->peer_addr_len) == -1)
-        {
-            close(data->socket_fd);
-            perror("Error sending disconnect code");
-            *err = errno;
-        }
-        printf("Sent disconnect message to peer\n");
-    }
-    endwin();
+    
+    return NULL;
 }
 
 void close_socket(int socket_fd)

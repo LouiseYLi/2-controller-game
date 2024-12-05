@@ -9,8 +9,8 @@
 
 #define P1_INITIAL_X 15
 #define P1_INITIAL_Y 8
-#define P2_INITIAL_X 35
-#define P2_INITIAL_Y 17
+// #define P2_INITIAL_X 35
+// #define P2_INITIAL_Y 17
 
 // #define sleep_time 100000000
 
@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
     const int             height   = 20;
     const int             width    = 60;
     game                  g        = {0, height, width, NULL};
-    player                p        = {0, P1_INITIAL_X, P1_INITIAL_Y};
-    player                p2       = {0, P2_INITIAL_X, P2_INITIAL_Y};
+    player                p        = {0, P1_INITIAL_X, P1_INITIAL_Y, 0, 0};
+    player                p2       = {0, P1_INITIAL_X, P1_INITIAL_Y, 0, 0};
     int                   err      = 0;
     int                   retval   = 0;
     int setup_socket_res;

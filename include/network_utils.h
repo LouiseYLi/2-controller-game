@@ -26,8 +26,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-static int terminate = 0;
+static volatile sig_atomic_t terminate = 0;
 #pragma GCC diagnostic pop
+
 
 // TODO: ensure each packet delivered has packet id
 // TODO: when receiving, check if new packet_id is > than current
@@ -78,5 +79,11 @@ int setup_host_socket(struct network_socket *data, int *err);
 void handle_peer(struct network_socket *data, const game *g, player *local_player, player *other_player, int *err);
 
 void close_socket(int socket_fd);
+
+void *receive_thread_func(void *arg);
+
+void *send_thread_func(void *arg);
+
+pthread_mutex_t* get_player_lock(void);
 
 #endif    // GAME_NETWORK_UTILS_H
